@@ -27,7 +27,7 @@ class MicroserviceHelloWorldControllerSpec
      with Matchers:
 
   private val fakeRequest = FakeRequest("GET", "/")
-  private val controller  = new MicroserviceHelloWorldController(Helpers.stubControllerComponents())
+  private val controller  = new ManageCisController(Helpers.stubControllerComponents())
 
   "GET /" should:
     "return 200" in:
