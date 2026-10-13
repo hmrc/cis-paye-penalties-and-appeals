@@ -34,7 +34,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
                                       config: ServicesConfig)
                                      (implicit ec: ExecutionContext) extends Logging {
 
-  private val rdsDatacachePath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy"
+  private val rdsDatacachePath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/pas"
 
   def createCisAppeal(createCisAppealRequest: CreateCisAppealRequest)(implicit hc: HeaderCarrier): Future[CreateCisAppealResponse] =
     val url: URL = url"$rdsDatacachePath/cis/appeal"

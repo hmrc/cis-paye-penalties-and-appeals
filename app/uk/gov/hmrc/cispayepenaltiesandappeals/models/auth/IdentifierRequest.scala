@@ -19,4 +19,4 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.models.auth
 import play.api.mvc.{Request, WrappedRequest}
 import uk.gov.hmrc.auth.core.AffinityGroup
 
-case class IdentifierRequest[A](request: Request[A], credentialId: String, affinityGroup: AffinityGroup) extends WrappedRequest[A](request)
+case class IdentifierRequest[A](request: Request[A], affinityGroup: AffinityGroup) extends WrappedRequest[A](request)

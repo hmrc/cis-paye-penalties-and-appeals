@@ -16,20 +16,16 @@
 
 package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-import play.api.http.Status
-import play.api.test.Helpers._
-import play.api.test.{FakeRequest, Helpers}
 
-class MicroserviceHelloWorldControllerSpec
-  extends AnyWordSpec
-     with Matchers:
+class ManageCisControllerSpec extends AnyFreeSpec with Matchers {
 
-  private val fakeRequest = FakeRequest("GET", "/")
-  private val controller  = new ManageCisController(Helpers.stubControllerComponents())
+  "ManageCisControllerSpec" - {
+    "POST /create-cis-appeal (createCisAppeal)" - {
+      "return 201" ignore {
 
-  "GET /" should:
-    "return 200" in:
-      val result = controller.hello()(fakeRequest)
-      status(result) shouldBe Status.OK
+      }
+    }
+  }
+}
