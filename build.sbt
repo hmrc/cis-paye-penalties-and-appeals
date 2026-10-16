@@ -14,6 +14,7 @@ lazy val microservice = Project("cis-paye-penalties-and-appeals", file("."))
     scalacOptions += "-Wconf:src=routes/.*:s",
   )
   .settings(CodeCoverageSettings.settings: _*)
+  .settings(PlayKeys.playDefaultPort := 61001)
 
 lazy val it = project
   .enablePlugins(PlayScala)

@@ -1,4 +1,4 @@
 # microservice specific routes
 
 POST        /cis/appeal              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.createCisAppeal()
-GET         /cis/penalties           uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalties()
+POST        /cis/penalties           uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalties()

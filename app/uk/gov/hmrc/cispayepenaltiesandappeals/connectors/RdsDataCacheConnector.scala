@@ -51,7 +51,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
 
   def getCisAppealablePenalties(request: GetCisAppealablePenaltiesRequest)(implicit hc: HeaderCarrier): Future[GetCisAppealablePenaltiesResponse] =
     val url: URL = url"$rdsDatacachePath/cis/penalties"
-    http.get(url)
+    http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetCisAppealablePenaltiesResponse]
       .recover {
