@@ -21,19 +21,39 @@ import play.api.libs.json.{Json, OFormat}
 import java.time.LocalDate
 
 case class CreateCisAppealRequest(
-                              penaltyId: Long
-                            )
+                                   penaltyId: Long
+                                 )
 
 object CreateCisAppealRequest {
   implicit val format: OFormat[CreateCisAppealRequest] = Json.format[CreateCisAppealRequest]
 }
 
 case class CreateCisAppealResponse(
-                                   created: Boolean
-                                 )
+                                    created: Boolean
+                                  )
 
 object CreateCisAppealResponse {
   implicit val format: OFormat[CreateCisAppealResponse] = Json.format[CreateCisAppealResponse]
+}
+
+case class GetCisAppealablePenaltiesRequest(
+                                             hmrcOfficeNumber      : String,
+                                             schemeReferenceNumber : String,
+                                             startRow              : Long,
+                                             endRow                : Long
+                                           )
+
+object GetCisAppealablePenaltiesRequest {
+  implicit val format: OFormat[GetCisAppealablePenaltiesRequest] = Json.format[GetCisAppealablePenaltiesRequest]
+}
+
+case class GetCisAppealablePenaltiesResponse(
+                                              total: Int,
+                                              appealablePenalties: List[GetCisAppealablePenaltyResponse]
+                                            )
+
+object GetCisAppealablePenaltiesResponse {
+  implicit val format: OFormat[GetCisAppealablePenaltiesResponse] = Json.format[GetCisAppealablePenaltiesResponse]
 }
 
 case class GetCisAppealablePenaltyRequest(
@@ -47,7 +67,7 @@ object GetCisAppealablePenaltyRequest {
 }
 
 case class GetCisAppealablePenaltyResponse(
-                                            uniqueId: Option[Int],
+                                            uniqueId: Option[Long],
                                             issueDate: Option[LocalDate],
                                             taxPeriodEndDate: Option[LocalDate],
                                             penaltyType: Option[String],

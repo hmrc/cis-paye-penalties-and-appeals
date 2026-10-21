@@ -121,6 +121,120 @@ final class CisServiceSpec extends SpecBase {
       }
     }
 
+    "getCisAppealablePenalties" - {
+
+      def testRequest(hmrcOfficeNum: String = "123", schemeRefNum: String = "AB456") = GetCisAppealablePenaltiesRequest(
+        hmrcOfficeNumber = hmrcOfficeNum,
+        schemeReferenceNumber = schemeRefNum,
+        startRow = 1L,
+        endRow = 10L
+      )
+
+      val testResponse = GetCisAppealablePenaltiesResponse(
+        total = 2,
+        appealablePenalties = List(
+          GetCisAppealablePenaltyResponse(
+            uniqueId = Some(10001),
+            issueDate = Some(LocalDate.of(2023, 1, 1)),
+            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+            penaltyType = Some("CIS03"),
+            penaltyAmount = Some(BigDecimal(999.23))
+          ),
+          GetCisAppealablePenaltyResponse(
+            uniqueId = Some(10002),
+            issueDate = Some(LocalDate.of(2023, 1, 1)),
+            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+            penaltyType = Some("CIS03"),
+            penaltyAmount = Some(BigDecimal(999.23))
+          )
+        )
+      )
+
+      "must delegate to connector (happy path)" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+
+        val result: GetCisAppealablePenaltiesResponse = service.getCisAppealablePenalties(testRequest()).futureValue
+        result mustBe testResponse
+
+        verify(connector).getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate failures from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val boom = UpstreamErrorResponse("Service unavailable", 503)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.getCisAppealablePenalties(testRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must call connector exactly once per request" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+
+        service.getCisAppealablePenalties(testRequest()).futureValue
+
+        verify(connector, times(1)).getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must handle consecutive requests independently" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val request1 = testRequest()
+        val request2 = testRequest("456", "CD789")
+        val request3 = testRequest("789", "EF123")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisAppealablePenalties(eqTo(request1))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+        when(connector.getCisAppealablePenalties(eqTo(request2))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+        when(connector.getCisAppealablePenalties(eqTo(request3))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+
+        service.getCisAppealablePenalties(request1).futureValue mustBe testResponse
+        service.getCisAppealablePenalties(request2).futureValue mustBe testResponse
+        service.getCisAppealablePenalties(request3).futureValue mustBe testResponse
+
+        verify(connector, times(3)).getCisAppealablePenalties(any[GetCisAppealablePenaltiesRequest])(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate RuntimeException from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val boom = new RuntimeException("Connection failed")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.getCisAppealablePenalties(testRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+    }
+
     "getCisAppealablePenalty" - {
 
       def getCisAppealablePenaltyRequest(penaltyId: Long = 1L) =

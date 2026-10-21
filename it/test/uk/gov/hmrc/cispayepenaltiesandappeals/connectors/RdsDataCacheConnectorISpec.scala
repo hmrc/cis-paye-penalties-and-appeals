@@ -24,7 +24,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.http.Status.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.cispayepenaltiesandappeals.itUtil.ApplicationWithWiremock
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, CreateCisAppealResponse, GetCisAppealablePenaltyRequest, GetCisAppealablePenaltyResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDate
@@ -118,6 +118,129 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
 
       val ex = intercept[Exception] {
         connector.createCisAppeal(payload).futureValue
+      }
+
+      ex mustBe a[RuntimeException]
+    }
+  }
+
+  "getCisAppealablePenalties" should {
+
+    val url = "/rds-datacache-proxy/pas/cis/penalties"
+
+    val payload = GetCisAppealablePenaltiesRequest(
+      hmrcOfficeNumber = "123",
+      schemeReferenceNumber = "AB456",
+      startRow = 1,
+      endRow = 10
+    )
+
+    val penaltiesReturnJson = Json.obj(
+      "total" -> 2,
+      "appealablePenalties" -> Json.arr(
+        Json.obj(
+          "uniqueId" -> 10001,
+          "issueDate" -> "2023-01-01",
+          "taxPeriodEndDate" -> "2023-04-01",
+          "penaltyType" -> "CIS003",
+          "penaltyAmount" -> 999.23
+        ),
+        Json.obj(
+          "uniqueId" -> 10002,
+          "issueDate" -> "2026-02-20",
+          "taxPeriodEndDate" -> "2026-01-05",
+          "penaltyType" -> "CIS005",
+          "penaltyAmount" -> 928.23
+        )
+      )
+    )
+
+    "return GetCisAppealablePenaltiesRequest when BE returns OK with valid JSON" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(penaltiesReturnJson.toString())
+          )
+      )
+
+      val result = connector.getCisAppealablePenalties(payload).futureValue
+
+      result mustBe GetCisAppealablePenaltiesResponse(
+        total = 2,
+        appealablePenalties = List(
+          GetCisAppealablePenaltyResponse(
+            uniqueId = Some(10001),
+            issueDate = Some(LocalDate.of(2023, 1, 1)),
+            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+            penaltyType = Some("CIS003"),
+            penaltyAmount = Some(BigDecimal(999.23))
+          ),
+          GetCisAppealablePenaltyResponse(
+            uniqueId = Some(10002),
+            issueDate = Some(LocalDate.of(2026, 2, 20)),
+            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
+            penaltyType = Some("CIS005"),
+            penaltyAmount = Some(BigDecimal(928.23))
+          )
+        )
+      )
+    }
+
+    "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisAppealablePenalties(payload).futureValue
+      }
+      ex.getMessage must include("500")
+    }
+
+    "propagate an upstream error when BE returns BAD_REQUEST" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Invalid request"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisAppealablePenalties(payload).futureValue
+      }
+      ex.getMessage must include("400")
+    }
+
+    "propagate Exception when BE throws unexpected JSResult" in {
+      val payloadJson = Json.toJson(payload)
+      val connector = app.injector.instanceOf[RdsDataCacheConnector]
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "hmrcOfficeNumber": "ANY_VALUE"
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisAppealablePenalties(payload).futureValue
       }
 
       ex mustBe a[RuntimeException]
