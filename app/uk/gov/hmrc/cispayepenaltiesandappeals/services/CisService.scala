@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,12 @@ import scala.concurrent.Future
 class CisService @Inject()(rdsDataCacheConnector: RdsDataCacheConnector) {
 
   def createCisAppeal(createCisAppealRequest: CreateCisAppealRequest)
-                  (implicit hc: HeaderCarrier): Future[CreateCisAppealResponse] =
+                     (implicit hc: HeaderCarrier): Future[CreateCisAppealResponse] =
     rdsDataCacheConnector.createCisAppeal(createCisAppealRequest)
+
+  def getCisAppealablePenalties(request: GetCisAppealablePenaltiesRequest)
+                     (implicit hc: HeaderCarrier): Future[GetCisAppealablePenaltiesResponse] =
+    rdsDataCacheConnector.getCisAppealablePenalties(request)
 
   def getCisAppealablePenalty(request: GetCisAppealablePenaltyRequest)
                              (implicit hc: HeaderCarrier): Future[GetCisAppealablePenaltyResponse] =

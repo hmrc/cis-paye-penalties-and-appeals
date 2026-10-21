@@ -20,18 +20,18 @@ import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.IdentifierAction
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, GetCisAppealablePenaltyRequest}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, GetCisAppealablePenaltiesRequest, GetCisAppealablePenaltyRequest}
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.CisService
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton()
+@Singleton
 class ManageCisController @Inject()(
-  cc: ControllerComponents,
-  auth: IdentifierAction,
-  service: CisService
-)(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
+                                     cc: ControllerComponents,
+                                     auth: IdentifierAction,
+                                     service: CisService
+                                   )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
 
   def createCisAppeal(): Action[JsValue] = auth.async(parse.json) { implicit request =>
@@ -48,6 +48,25 @@ class ManageCisController @Inject()(
             }
             .recover { case t =>
               logger.error("[ManageCisController][createCisAppeal] failed", t)
+              InternalServerError(Json.obj("message" -> "Unexpected error"))
+            }
+      )
+  }
+
+  def getCisAppealablePenalties: Action[JsValue] = auth.async(parse.json) { implicit request =>
+    request.body
+      .validate[GetCisAppealablePenaltiesRequest]
+      .fold(
+        errs =>
+          Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
+        body =>
+          service
+            .getCisAppealablePenalties(body)
+            .map { result =>
+              Ok(Json.toJson(result))
+            }
+            .recover { case t =>
+              logger.error("[ManageCisController][getCisAppealablePenalties] failed", t)
               InternalServerError(Json.obj("message" -> "Unexpected error"))
             }
       )
