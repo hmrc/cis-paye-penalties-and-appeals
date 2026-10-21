@@ -76,4 +76,18 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           logger.error(s"[RdsDataCacheConnector][getCisAppealablePenalty]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
+
+  def createPayeAppeal(createPayeAppealRequest: CreatePayeAppealRequest)(implicit hc: HeaderCarrier): Future[CreatePayeAppealResponse] =
+    val url: URL = url"$rdsDatacachePath/paye/appeal"
+    http.post(url)
+      .withBody(Json.toJson(createPayeAppealRequest))
+      .execute[CreatePayeAppealResponse]
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.error(s"[RdsDataCacheConnector][createPayeAppeal]: Upstream error - ${e.getMessage}")
+          throw e
+        case e: Throwable =>
+          logger.error(s"[RdsDataCacheConnector][createPayeAppeal]: ${e.getMessage}")
+          throw new RuntimeException(e.getMessage)
+      }
 }

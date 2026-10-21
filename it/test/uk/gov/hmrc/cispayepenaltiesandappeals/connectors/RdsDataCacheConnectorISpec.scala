@@ -345,4 +345,86 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
 
   }
 
+  "createPayeAppeal" should {
+
+    val url = "/rds-datacache-proxy/pas/paye/appeal"
+
+    val payload = CreatePayeAppealRequest(penaltyId = 1)
+
+    "return CreatePayeAppealResponse when BE returns OK with valid JSON" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "created": true
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.createPayeAppeal(payload).futureValue
+
+      result mustBe CreatePayeAppealResponse(created = true)
+    }
+
+    "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.createPayeAppeal(payload).futureValue
+      }
+      ex.getMessage must include("500")
+    }
+
+    "propagate an upstream error when BE returns BAD_REQUEST" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Invalid request"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.createPayeAppeal(payload).futureValue
+      }
+      ex.getMessage must include("400")
+    }
+
+    "propagate Exception when BE returns unexpected JSON" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "created": "ANY_VALUE"
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.createPayeAppeal(payload).futureValue
+      }
+
+      ex mustBe a[RuntimeException]
+    }
+  }
 }
