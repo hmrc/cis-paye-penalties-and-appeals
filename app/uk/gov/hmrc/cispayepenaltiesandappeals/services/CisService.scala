@@ -17,7 +17,7 @@
 package uk.gov.hmrc.cispayepenaltiesandappeals.services
 
 import uk.gov.hmrc.cispayepenaltiesandappeals.connectors.RdsDataCacheConnector
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, CreateCisAppealResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -29,4 +29,8 @@ class CisService @Inject()(rdsDataCacheConnector: RdsDataCacheConnector) {
   def createCisAppeal(createCisAppealRequest: CreateCisAppealRequest)
                   (implicit hc: HeaderCarrier): Future[CreateCisAppealResponse] =
     rdsDataCacheConnector.createCisAppeal(createCisAppealRequest)
-  }
+
+  def getCisAppealablePenalty(request: GetCisAppealablePenaltyRequest)
+                             (implicit hc: HeaderCarrier): Future[GetCisAppealablePenaltyResponse] =
+    rdsDataCacheConnector.getCisAppealablePenalty(request)
+}

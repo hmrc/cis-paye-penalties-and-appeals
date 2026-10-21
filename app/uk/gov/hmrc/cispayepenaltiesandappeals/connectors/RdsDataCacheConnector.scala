@@ -17,7 +17,7 @@
 package uk.gov.hmrc.cispayepenaltiesandappeals.connectors
 
 
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, CreateCisAppealResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
@@ -49,5 +49,18 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           logger.error(s"[RdsDataCacheConnector][createCisAppeal]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
-  
+
+  def getCisAppealablePenalty(request: GetCisAppealablePenaltyRequest)(implicit hc: HeaderCarrier): Future[GetCisAppealablePenaltyResponse] =
+    val url: URL = url"$rdsDatacachePath/cis/penalty"
+    http.post(url)
+      .withBody(Json.toJson(request))
+      .execute[GetCisAppealablePenaltyResponse]
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.error(s"[RdsDataCacheConnector][getCisAppealablePenalty]: Upstream error - ${e.getMessage}")
+          throw e
+        case e: Throwable =>
+          logger.error(s"[RdsDataCacheConnector][getCisAppealablePenalty]: ${e.getMessage}")
+          throw new RuntimeException(e.getMessage)
+      }
 }

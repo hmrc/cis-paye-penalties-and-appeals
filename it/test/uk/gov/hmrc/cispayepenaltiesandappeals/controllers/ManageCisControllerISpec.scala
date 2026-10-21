@@ -19,21 +19,35 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 import uk.gov.hmrc.cispayepenaltiesandappeals.itUtil.ApplicationWithWiremock
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.http.Status
-import play.api.http.Status.{CREATED, FORBIDDEN}
+import play.api.http.Status.{CREATED, FORBIDDEN, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.BaseSpec
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, CreateCisAppealResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
+
+import java.time.LocalDate
 
 class ManageCisControllerISpec extends BaseSpec
   with GuiceOneServerPerSuite with ApplicationWithWiremock {
 
   val servicePrefix = s"http://localhost:$port/cis-paye-penalties-and-appeals"
   lazy val createCisAppealUrl = s"$servicePrefix/cis/appeal"
+  lazy val getAppealablePenaltyUrl = s"$servicePrefix/cis/penalty"
 
   def stubCreateCisAppealResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/cis/appeal", Status.CREATED,
       Json.toJson(CreateCisAppealResponse(created = true)).toString)
+  }
+
+  def stubGetAppealablePenaltyResponse(): Unit = {
+    stubPost("/rds-datacache-proxy/pas/cis/penalty", Status.OK,
+      Json.toJson(GetCisAppealablePenaltyResponse(
+        uniqueId = None,
+        issueDate = Some(LocalDate.of(2023, 1, 1)),
+        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+        penaltyType = Some("CIS003"),
+        penaltyAmount = Some(BigDecimal(999.23))
+      )).toString)
   }
 
   "ManageCisController" should {
@@ -60,6 +74,39 @@ class ManageCisControllerISpec extends BaseSpec
           CreateCisAppealRequest(penaltyId = 1L))
 
         val result = wsClient.url(createCisAppealUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
+      }
+    }
+
+    "call getCisAppealablePenalty" when {
+
+      val testRequest = GetCisAppealablePenaltyRequest(
+        penaltyId = 1L,
+        hmrcOfficeNumber = "840123",
+        schemeReferenceNumber = "098345"
+      )
+
+      "return a 200:OK:: authorised request" in {
+        stubAuthorised()
+        stubGetAppealablePenaltyResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getAppealablePenaltyUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe OK
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubGetAppealablePenaltyResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getAppealablePenaltyUrl)
           .withHttpHeaders("Authorization" -> "Bearer123")
           .post(jsonBody)
 
