@@ -27,7 +27,7 @@ import uk.gov.hmrc.cispayepenaltiesandappeals.models.{GetAppealablePenaltiesRequ
 
 import java.time.LocalDate
 
-class PayeControllerISpec extends BaseSpec
+class ManagePayeControllerISpec extends BaseSpec
   with GuiceOneServerPerSuite with ApplicationWithWiremock {
 
   val servicePrefix = s"http://localhost:$port/cis-paye-penalties-and-appeals"
@@ -42,14 +42,14 @@ class PayeControllerISpec extends BaseSpec
             uniqueId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("CIS003"),
+            penaltyType = Some("PAYE3"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
           GetAppealablePenaltyResponse(
             uniqueId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("CIS005"),
+            penaltyType = Some("PAYE3"),
             penaltyAmount = Some(BigDecimal(928.23))
           )
         )

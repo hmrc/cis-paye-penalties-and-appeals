@@ -28,7 +28,7 @@ import scala.concurrent.Future
 
 final class PayeServiceSpec extends SpecBase {
 
-  "CisService getPayeAppealablePenalties" - {
+  "PayeService getPayeAppealablePenalties" - {
 
     def testRequest(hmrcOfficeNum: String = "123", schemeRefNum: String = "AB456") = GetAppealablePenaltiesRequest(
       hmrcOfficeNumber = hmrcOfficeNum,
@@ -44,14 +44,14 @@ final class PayeServiceSpec extends SpecBase {
           uniqueId = Some(10001),
           issueDate = Some(LocalDate.of(2023, 1, 1)),
           taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-          penaltyType = Some("CIS03"),
+          penaltyType = Some("PAYE3"),
           penaltyAmount = Some(BigDecimal(999.23))
         ),
         GetAppealablePenaltyResponse(
           uniqueId = Some(10002),
           issueDate = Some(LocalDate.of(2023, 1, 1)),
           taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-          penaltyType = Some("CIS03"),
+          penaltyType = Some("PAYE03"),
           penaltyAmount = Some(BigDecimal(999.23))
         )
       )

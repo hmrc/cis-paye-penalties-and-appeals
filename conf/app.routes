@@ -6,4 +6,4 @@ POST        /cis/penalties           uk.gov.hmrc.cispayepenaltiesandappeals.cont
 POST        /cis/penalty             uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalty()
 
 # PAYE routes
-POST        /paye/penalties          uk.gov.hmrc.cispayepenaltiesandappeals.controllers.PayeController.getPayeAppealablePenalties()
+POST        /paye/penalties          uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayeAppealablePenalties()

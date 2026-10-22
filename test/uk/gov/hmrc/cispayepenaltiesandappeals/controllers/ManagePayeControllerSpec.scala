@@ -30,11 +30,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import java.time.LocalDate
 import scala.concurrent.Future
 
-class PayeControllerSpec extends SpecBase {
+class ManagePayeControllerSpec extends SpecBase {
 
   "PayeController" - {
 
-    "POST /cis/penalties (getCisAppealablePenalties)" - {
+    "POST /paye/penalties (getPayeAppealablePenalties)" - {
 
       val testRequest: GetAppealablePenaltiesRequest = GetAppealablePenaltiesRequest(
         hmrcOfficeNumber = "123",
@@ -49,14 +49,14 @@ class PayeControllerSpec extends SpecBase {
             uniqueId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("CIS003"),
+            penaltyType = Some("PAYE3"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
           GetAppealablePenaltyResponse(
             uniqueId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("CIS005"),
+            penaltyType = Some("PAYE3"),
             penaltyAmount = Some(BigDecimal(928.23))
           )
         )
@@ -102,6 +102,6 @@ class PayeControllerSpec extends SpecBase {
 
   private trait BaseSetup {
     val mockPayeService: PayeService = mock[PayeService]
-    val controller = new PayeController(cc, fakeIdentifierAction, mockPayeService)
+    val controller = new ManagePayeController(cc, fakeIdentifierAction, mockPayeService)
   }
 }

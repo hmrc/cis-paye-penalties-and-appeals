@@ -365,14 +365,14 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
           "uniqueId" -> 10001,
           "issueDate" -> "2023-01-01",
           "taxPeriodEndDate" -> "2023-04-01",
-          "penaltyType" -> "CIS003",
+          "penaltyType" -> "PAYE3",
           "penaltyAmount" -> 999.23
         ),
         Json.obj(
           "uniqueId" -> 10002,
           "issueDate" -> "2026-02-20",
           "taxPeriodEndDate" -> "2026-01-05",
-          "penaltyType" -> "CIS005",
+          "penaltyType" -> "PAYE5",
           "penaltyAmount" -> 928.23
         )
       )
@@ -400,14 +400,14 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
             uniqueId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("CIS003"),
+            penaltyType = Some("PAYE3"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
           GetAppealablePenaltyResponse(
             uniqueId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("CIS005"),
+            penaltyType = Some("PAYE5"),
             penaltyAmount = Some(BigDecimal(928.23))
           )
         )

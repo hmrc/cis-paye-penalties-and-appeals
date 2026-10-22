@@ -180,14 +180,14 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
       (json \ "total").as[Int] mustBe 2
 
       val first = (json \ "appealablePenalties" \ 0).get
-      (first \ "uniqueId").as[Int] mustBe 10001
+      (first \ "uniqueId").as[Long] mustBe 10001
       (first \ "issueDate").as[LocalDate] mustBe LocalDate.of(2023, 1, 1)
       (first \ "taxPeriodEndDate").as[LocalDate] mustBe LocalDate.of(2023, 4, 1)
       (first \ "penaltyType").as[String] mustBe "CIS003"
       (first \ "penaltyAmount").as[BigDecimal] mustBe BigDecimal("999.23")
 
       val second = (json \ "appealablePenalties" \ 1).get
-      (second \ "uniqueId").as[Int] mustBe 10002
+      (second \ "uniqueId").as[Long] mustBe 10002
       (second \ "issueDate").as[LocalDate] mustBe LocalDate.of(2025, 1, 1)
       (second \ "taxPeriodEndDate").as[LocalDate] mustBe LocalDate.of(2026, 4, 1)
       (second \ "penaltyType").as[String] mustBe "CIS005"
@@ -306,7 +306,7 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
 
       val json = Json.toJson(response)
 
-      (json \ "uniqueId").as[Int] mustBe 10001
+      (json \ "uniqueId").as[Long] mustBe 10001
       (json \ "issueDate").as[String] mustBe "2023-01-01"
       (json \ "taxPeriodEndDate").as[String] mustBe "2023-04-01"
       (json \ "penaltyType").as[String] mustBe "CIS003"

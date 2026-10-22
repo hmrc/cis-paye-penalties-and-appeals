@@ -27,7 +27,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class PayeController @Inject()(
+class ManagePayeController @Inject()(
                                      cc: ControllerComponents,
                                      auth: IdentifierAction,
                                      service: PayeService
@@ -46,7 +46,7 @@ class PayeController @Inject()(
               Ok(Json.toJson(result))
             }
             .recover { case t =>
-              logger.error("[ManageCisController][getPayeAppealablePenalties] failed", t)
+              logger.error("[ManagePayeController][getPayeAppealablePenalties] failed", t)
               InternalServerError(Json.obj("message" -> "Unexpected error"))
             }
       )
