@@ -345,4 +345,131 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
 
   }
 
+  "getCisTaxpayer" should {
+
+    val url = "/rds-datacache-proxy/cis-taxpayer"
+
+    val payload = GetCisTaxpayerRequest(
+      hmrcOfficeNumber = "123",
+      schemeReferenceNumber = "AB456"
+    )
+
+    "return GetCisTaxpayerResponse when BE returns OK with valid JSON" in {
+      val payloadJson = Json.obj("taxOfficeNumber" -> "123", "taxOfficeReference" -> "AB456")
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "uniqueId": "1000123",
+                   |  "taxOfficeNumber": "123",
+                   |  "taxOfficeRef": "AB456",
+                   |  "aoDistrict": "123",
+                   |  "aoPayType": "P",
+                   |  "aoCheckCode": "X",
+                   |  "aoReference": "00123456",
+                   |  "schemeName": "ABC Builders Ltd",
+                   |  "utr": "1234567890"
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.getCisTaxpayer(payload).futureValue
+
+      result mustBe GetCisTaxpayerResponse(
+        uniqueId = "1000123",
+        taxOfficeNumber = "123",
+        taxOfficeRef = "AB456",
+        aoDistrict = Some("123"),
+        aoPayType = Some("P"),
+        aoCheckCode = Some("X"),
+        aoReference = Some("00123456"),
+        validBusinessAddr = None,
+        correlation = None,
+        ggAgentId = None,
+        employerName1 = None,
+        employerName2 = None,
+        agentOwnRef = None,
+        schemeName = Some("ABC Builders Ltd"),
+        utr = Some("1234567890"),
+        enrolledSig = None
+      )
+    }
+
+    "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
+      val payloadJson = Json.obj("taxOfficeNumber" -> "123", "taxOfficeReference" -> "AB456")
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisTaxpayer(payload).futureValue
+      }
+      ex.getMessage must include("500")
+    }
+
+    "propagate an upstream error when BE returns BAD_REQUEST" in {
+      val payloadJson = Json.obj("taxOfficeNumber" -> "123", "taxOfficeReference" -> "AB456")
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Invalid request"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisTaxpayer(payload).futureValue
+      }
+      ex.getMessage must include("400")
+    }
+
+    "propagate an upstream error when BE returns NOT_FOUND" in {
+      val payloadJson = Json.obj("taxOfficeNumber" -> "123", "taxOfficeReference" -> "AB456")
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(NOT_FOUND).withBody("""{"message":"CIS taxpayer not found"}"""))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisTaxpayer(payload).futureValue
+      }
+      ex.getMessage must include("404")
+    }
+
+    "propagate Exception when BE throws unexpected JSResult" in {
+      val payloadJson = Json.obj("taxOfficeNumber" -> "123", "taxOfficeReference" -> "AB456")
+      val connector = app.injector.instanceOf[RdsDataCacheConnector]
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "uniqueId": 1000123
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getCisTaxpayer(payload).futureValue
+      }
+
+      ex mustBe a[RuntimeException]
+    }
+
+  }
 }
