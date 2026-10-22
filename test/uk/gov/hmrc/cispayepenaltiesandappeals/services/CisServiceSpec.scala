@@ -123,24 +123,24 @@ final class CisServiceSpec extends SpecBase {
 
     "getCisAppealablePenalties" - {
 
-      def testRequest(hmrcOfficeNum: String = "123", schemeRefNum: String = "AB456") = GetCisAppealablePenaltiesRequest(
+      def testRequest(hmrcOfficeNum: String = "123", schemeRefNum: String = "AB456") = GetAppealablePenaltiesRequest(
         hmrcOfficeNumber = hmrcOfficeNum,
         schemeReferenceNumber = schemeRefNum,
         startRow = 1L,
         endRow = 10L
       )
 
-      val testResponse = GetCisAppealablePenaltiesResponse(
+      val testResponse = GetAppealablePenaltiesResponse(
         total = 2,
         appealablePenalties = List(
-          GetCisAppealablePenaltyResponse(
+          GetAppealablePenaltyResponse(
             uniqueId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
             penaltyType = Some("CIS03"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
-          GetCisAppealablePenaltyResponse(
+          GetAppealablePenaltyResponse(
             uniqueId = Some(10002),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
@@ -158,7 +158,7 @@ final class CisServiceSpec extends SpecBase {
         when(connector.getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier]))
           .thenReturn(Future.successful(testResponse))
 
-        val result: GetCisAppealablePenaltiesResponse = service.getCisAppealablePenalties(testRequest()).futureValue
+        val result: GetAppealablePenaltiesResponse = service.getCisAppealablePenalties(testRequest()).futureValue
         result mustBe testResponse
 
         verify(connector).getCisAppealablePenalties(eqTo(testRequest()))(any[HeaderCarrier])
@@ -214,7 +214,7 @@ final class CisServiceSpec extends SpecBase {
         service.getCisAppealablePenalties(request2).futureValue mustBe testResponse
         service.getCisAppealablePenalties(request3).futureValue mustBe testResponse
 
-        verify(connector, times(3)).getCisAppealablePenalties(any[GetCisAppealablePenaltiesRequest])(any[HeaderCarrier])
+        verify(connector, times(3)).getCisAppealablePenalties(any[GetAppealablePenaltiesRequest])(any[HeaderCarrier])
         verifyNoMoreInteractions(connector)
       }
 
@@ -238,13 +238,13 @@ final class CisServiceSpec extends SpecBase {
     "getCisAppealablePenalty" - {
 
       def getCisAppealablePenaltyRequest(penaltyId: Long = 1L) =
-        GetCisAppealablePenaltyRequest(
+        GetAppealablePenaltyRequest(
           penaltyId = penaltyId,
           hmrcOfficeNumber = "840123",
           schemeReferenceNumber = "098345"
         )
 
-      val getCisAppealablePenaltyResponse = GetCisAppealablePenaltyResponse(
+      val getCisAppealablePenaltyResponse = GetAppealablePenaltyResponse(
         uniqueId = None,
         issueDate = Some(LocalDate.of(2023, 1, 1)),
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
@@ -260,7 +260,7 @@ final class CisServiceSpec extends SpecBase {
         when(connector.getCisAppealablePenalty(eqTo(getCisAppealablePenaltyRequest()))(any[HeaderCarrier]))
           .thenReturn(Future.successful(getCisAppealablePenaltyResponse))
 
-        val result: GetCisAppealablePenaltyResponse = service.getCisAppealablePenalty(getCisAppealablePenaltyRequest()).futureValue
+        val result: GetAppealablePenaltyResponse = service.getCisAppealablePenalty(getCisAppealablePenaltyRequest()).futureValue
         result mustBe getCisAppealablePenaltyResponse
 
         verify(connector).getCisAppealablePenalty(eqTo(getCisAppealablePenaltyRequest()))(any[HeaderCarrier])
@@ -316,7 +316,7 @@ final class CisServiceSpec extends SpecBase {
         service.getCisAppealablePenalty(request2).futureValue mustBe getCisAppealablePenaltyResponse
         service.getCisAppealablePenalty(request3).futureValue mustBe getCisAppealablePenaltyResponse
 
-        verify(connector, times(3)).getCisAppealablePenalty(any[GetCisAppealablePenaltyRequest])(any[HeaderCarrier])
+        verify(connector, times(3)).getCisAppealablePenalty(any[GetAppealablePenaltyRequest])(any[HeaderCarrier])
         verifyNoMoreInteractions(connector)
       }
 
