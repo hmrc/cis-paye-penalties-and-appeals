@@ -20,8 +20,9 @@ import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.IdentifierAction
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, GetCisAppealablePenaltiesRequest, GetCisAppealablePenaltyRequest}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, GetCisAppealablePenaltiesRequest, GetCisAppealablePenaltyRequest, GetCisTaxpayerRequest}
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.CisService
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -87,6 +88,29 @@ class ManageCisController @Inject()(
             .recover { case t =>
               logger.error("[ManageCisController][getCisAppealablePenalty] failed", t)
               InternalServerError(Json.obj("message" -> "Unexpected error"))
+            }
+      )
+  }
+
+  def getCisTaxpayer(): Action[JsValue] = auth.async(parse.json) { implicit request =>
+    request.body
+      .validate[GetCisTaxpayerRequest]
+      .fold(
+        errs =>
+          Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
+        body =>
+          service
+            .getCisTaxpayer(body)
+            .map { result =>
+              Ok(Json.toJson(result))
+            }
+            .recover {
+              case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+                logger.warn(s"[ManageCisController][getCisTaxpayer] CIS taxpayer not found: ${e.getMessage}")
+                NotFound(Json.obj("message" -> "CIS taxpayer not found"))
+              case t =>
+                logger.error("[ManageCisController][getCisTaxpayer] failed", t)
+                InternalServerError(Json.obj("message" -> "Unexpected error"))
             }
       )
   }

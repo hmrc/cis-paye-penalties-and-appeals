@@ -77,3 +77,35 @@ case class GetCisAppealablePenaltyResponse(
 object GetCisAppealablePenaltyResponse {
   implicit val format: OFormat[GetCisAppealablePenaltyResponse] = Json.format[GetCisAppealablePenaltyResponse]
 }
+
+case class GetCisTaxpayerRequest(
+                                  hmrcOfficeNumber: String,
+                                  schemeReferenceNumber: String
+                                )
+
+object GetCisTaxpayerRequest {
+  implicit val format: OFormat[GetCisTaxpayerRequest] = Json.format[GetCisTaxpayerRequest]
+}
+
+case class GetCisTaxpayerResponse(
+                                   uniqueId: String,
+                                   taxOfficeNumber: String,
+                                   taxOfficeRef: String,
+                                   aoDistrict: Option[String],
+                                   aoPayType: Option[String],
+                                   aoCheckCode: Option[String],
+                                   aoReference: Option[String],
+                                   validBusinessAddr: Option[String],
+                                   correlation: Option[String],
+                                   ggAgentId: Option[String],
+                                   employerName1: Option[String],
+                                   employerName2: Option[String],
+                                   agentOwnRef: Option[String],
+                                   schemeName: Option[String],
+                                   utr: Option[String],
+                                   enrolledSig: Option[String]
+                                 )
+
+object GetCisTaxpayerResponse {
+  implicit val format: OFormat[GetCisTaxpayerResponse] = Json.format[GetCisTaxpayerResponse]
+}
