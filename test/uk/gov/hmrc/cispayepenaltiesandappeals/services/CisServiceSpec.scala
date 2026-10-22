@@ -336,5 +336,117 @@ final class CisServiceSpec extends SpecBase {
         verifyNoMoreInteractions(connector)
       }
     }
+
+    "getCisTaxpayer" - {
+
+      def getCisTaxpayerRequest(schemeReferenceNumber: String = "AB456") =
+        GetCisTaxpayerRequest(
+          hmrcOfficeNumber = "123",
+          schemeReferenceNumber = schemeReferenceNumber
+        )
+
+      val getCisTaxpayerResponse = GetCisTaxpayerResponse(
+        uniqueId = "1000123",
+        taxOfficeNumber = "123",
+        taxOfficeRef = "AB456",
+        aoDistrict = Some("123"),
+        aoPayType = Some("P"),
+        aoCheckCode = Some("X"),
+        aoReference = Some("00123456"),
+        validBusinessAddr = None,
+        correlation = None,
+        ggAgentId = None,
+        employerName1 = Some("ABC"),
+        employerName2 = None,
+        agentOwnRef = None,
+        schemeName = Some("ABC Builders Ltd"),
+        utr = Some("1234567890"),
+        enrolledSig = None
+      )
+
+      "must delegate to connector (happy path)" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisTaxpayer(eqTo(getCisTaxpayerRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(getCisTaxpayerResponse))
+
+        val result: GetCisTaxpayerResponse = service.getCisTaxpayer(getCisTaxpayerRequest()).futureValue
+        result mustBe getCisTaxpayerResponse
+
+        verify(connector).getCisTaxpayer(eqTo(getCisTaxpayerRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate failures from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val boom = UpstreamErrorResponse("CIS taxpayer not found", 404)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisTaxpayer(eqTo(getCisTaxpayerRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.getCisTaxpayer(getCisTaxpayerRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).getCisTaxpayer(eqTo(getCisTaxpayerRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must call connector exactly once per request" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisTaxpayer(eqTo(getCisTaxpayerRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(getCisTaxpayerResponse))
+
+        service.getCisTaxpayer(getCisTaxpayerRequest()).futureValue
+
+        verify(connector, times(1)).getCisTaxpayer(eqTo(getCisTaxpayerRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must handle consecutive requests independently" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val request1 = getCisTaxpayerRequest()
+        val request2 = getCisTaxpayerRequest("CD789")
+        val request3 = getCisTaxpayerRequest("EF012")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisTaxpayer(eqTo(request1))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(getCisTaxpayerResponse))
+        when(connector.getCisTaxpayer(eqTo(request2))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(getCisTaxpayerResponse))
+        when(connector.getCisTaxpayer(eqTo(request3))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(getCisTaxpayerResponse))
+
+        service.getCisTaxpayer(request1).futureValue mustBe getCisTaxpayerResponse
+        service.getCisTaxpayer(request2).futureValue mustBe getCisTaxpayerResponse
+        service.getCisTaxpayer(request3).futureValue mustBe getCisTaxpayerResponse
+
+        verify(connector, times(3)).getCisTaxpayer(any[GetCisTaxpayerRequest])(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate RuntimeException from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val boom = new RuntimeException("Connection failed")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.getCisTaxpayer(eqTo(getCisTaxpayerRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.getCisTaxpayer(getCisTaxpayerRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).getCisTaxpayer(eqTo(getCisTaxpayerRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+    }
   }
 }

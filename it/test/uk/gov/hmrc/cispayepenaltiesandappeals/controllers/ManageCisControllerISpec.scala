@@ -19,7 +19,7 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 import uk.gov.hmrc.cispayepenaltiesandappeals.itUtil.ApplicationWithWiremock
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.http.Status
-import play.api.http.Status.{CREATED, FORBIDDEN, OK}
+import play.api.http.Status.{CREATED, FORBIDDEN, NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.BaseSpec
@@ -34,6 +34,8 @@ class ManageCisControllerISpec extends BaseSpec
   lazy val createCisAppealUrl = s"$servicePrefix/cis/appeal"
   lazy val getCisAppealablePenaltiesUrl = s"$servicePrefix/cis/penalties"
   lazy val getAppealablePenaltyUrl = s"$servicePrefix/cis/penalty"
+  lazy val getCisTaxpayerUrl = s"$servicePrefix/cis/taxpayer"
+  val getCisTaxpayerProxyUrl = "/rds-datacache-proxy/cis-taxpayer"
 
   def stubCreateCisAppealResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/cis/appeal", Status.CREATED,
@@ -71,6 +73,28 @@ class ManageCisControllerISpec extends BaseSpec
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
         penaltyType = Some("CIS003"),
         penaltyAmount = Some(BigDecimal(999.23))
+      )).toString)
+  }
+
+  def stubGetCisTaxpayerResponse(): Unit = {
+    stubPost(getCisTaxpayerProxyUrl, Status.OK,
+      Json.toJson(GetCisTaxpayerResponse(
+        uniqueId = "1000123",
+        taxOfficeNumber = "123",
+        taxOfficeRef = "AB456",
+        aoDistrict = Some("123"),
+        aoPayType = Some("P"),
+        aoCheckCode = Some("X"),
+        aoReference = Some("00123456"),
+        validBusinessAddr = None,
+        correlation = None,
+        ggAgentId = None,
+        employerName1 = None,
+        employerName2 = None,
+        agentOwnRef = None,
+        schemeName = Some("ABC Builders Ltd"),
+        utr = Some("1234567890"),
+        enrolledSig = None
       )).toString)
   }
 
@@ -174,6 +198,51 @@ class ManageCisControllerISpec extends BaseSpec
           .post(jsonBody)
 
         result.status shouldBe FORBIDDEN
+      }
+    }
+
+    "call getCisTaxpayer" when {
+
+      val testRequest = GetCisTaxpayerRequest(
+        hmrcOfficeNumber = "123",
+        schemeReferenceNumber = "AB456"
+      )
+
+      "return a 200:OK:: authorised request" in {
+        stubAuthorised()
+        stubGetCisTaxpayerResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getCisTaxpayerUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe OK
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubGetCisTaxpayerResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getCisTaxpayerUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
+      }
+
+      "return a 404:NotFound:: authorised request when taxpayer does not exist" in {
+        stubAuthorised()
+        stubPost(getCisTaxpayerProxyUrl, Status.NOT_FOUND,
+          Json.obj("message" -> "CIS taxpayer not found").toString)
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getCisTaxpayerUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe NOT_FOUND
       }
     }
   }
