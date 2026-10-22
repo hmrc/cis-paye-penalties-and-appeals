@@ -78,23 +78,23 @@ class ManageCisControllerSpec extends SpecBase {
 
     "POST /cis/penalties (getCisAppealablePenalties)" - {
 
-      val testRequest: GetCisAppealablePenaltiesRequest = GetCisAppealablePenaltiesRequest(
+      val testRequest: GetAppealablePenaltiesRequest = GetAppealablePenaltiesRequest(
         hmrcOfficeNumber = "123",
         schemeReferenceNumber = "AB456",
         startRow = 1L,
         endRow = 10L
       )
-      val testResponse: GetCisAppealablePenaltiesResponse = GetCisAppealablePenaltiesResponse(
+      val testResponse: GetAppealablePenaltiesResponse = GetAppealablePenaltiesResponse(
         total = 2,
         appealablePenalties = List(
-          GetCisAppealablePenaltyResponse(
+          GetAppealablePenaltyResponse(
             uniqueId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
             penaltyType = Some("CIS003"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
-          GetCisAppealablePenaltyResponse(
+          GetAppealablePenaltyResponse(
             uniqueId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
@@ -131,7 +131,7 @@ class ManageCisControllerSpec extends SpecBase {
       }
 
       "return 500 Unexpected error on unknown exception" in new BaseSetup {
-        when(mockCisService.getCisAppealablePenalties(any[GetCisAppealablePenaltiesRequest])(any[HeaderCarrier]))
+        when(mockCisService.getCisAppealablePenalties(any[GetAppealablePenaltiesRequest])(any[HeaderCarrier]))
           .thenReturn(Future.failed(new RuntimeException("unexpected")))
 
         val result: Future[Result] = controller.getCisAppealablePenalties()(fakeRequest.withBody(Json.toJson(testRequest)))
@@ -142,13 +142,13 @@ class ManageCisControllerSpec extends SpecBase {
     }
     "POST /cis/penalty (getCisAppealablePenalty)" - {
 
-      val testRequest = GetCisAppealablePenaltyRequest(
+      val testRequest = GetAppealablePenaltyRequest(
         penaltyId = 1L,
         hmrcOfficeNumber = "840123",
         schemeReferenceNumber = "098345"
       )
 
-      val testResponse = GetCisAppealablePenaltyResponse(
+      val testResponse = GetAppealablePenaltyResponse(
         uniqueId = None,
         issueDate = Some(LocalDate.of(2023, 1, 1)),
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
@@ -183,7 +183,7 @@ class ManageCisControllerSpec extends SpecBase {
       }
 
       "return 500 Unexpected error on unknown exception" in new BaseSetup {
-        when(mockCisService.getCisAppealablePenalty(any[GetCisAppealablePenaltyRequest])(any[HeaderCarrier]))
+        when(mockCisService.getCisAppealablePenalty(any[GetAppealablePenaltyRequest])(any[HeaderCarrier]))
           .thenReturn(Future.failed(new RuntimeException("unexpected")))
 
         val result: Future[Result] = controller.getCisAppealablePenalty()(fakeRequest.withBody(Json.toJson(testRequest)))

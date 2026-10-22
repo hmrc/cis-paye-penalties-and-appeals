@@ -1,5 +1,9 @@
 # microservice specific routes
 
+# CIS routes
 POST        /cis/appeal              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.createCisAppeal()
 POST        /cis/penalties           uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalties()
 POST        /cis/penalty             uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalty()
+
+# PAYE routes
+POST        /paye/penalties          uk.gov.hmrc.cispayepenaltiesandappeals.controllers.PayeController.getPayeAppealablePenalties()

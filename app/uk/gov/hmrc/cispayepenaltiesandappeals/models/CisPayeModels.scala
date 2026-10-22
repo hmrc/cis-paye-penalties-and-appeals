@@ -21,59 +21,59 @@ import play.api.libs.json.{Json, OFormat}
 import java.time.LocalDate
 
 case class CreateCisAppealRequest(
-                                   penaltyId: Long
-                                 )
+                              penaltyId: Long
+                            )
 
 object CreateCisAppealRequest {
   implicit val format: OFormat[CreateCisAppealRequest] = Json.format[CreateCisAppealRequest]
 }
 
 case class CreateCisAppealResponse(
-                                    created: Boolean
-                                  )
+                                   created: Boolean
+                                 )
 
 object CreateCisAppealResponse {
   implicit val format: OFormat[CreateCisAppealResponse] = Json.format[CreateCisAppealResponse]
 }
 
-case class GetCisAppealablePenaltiesRequest(
+case class GetAppealablePenaltiesRequest(
                                              hmrcOfficeNumber      : String,
                                              schemeReferenceNumber : String,
                                              startRow              : Long,
                                              endRow                : Long
                                            )
 
-object GetCisAppealablePenaltiesRequest {
-  implicit val format: OFormat[GetCisAppealablePenaltiesRequest] = Json.format[GetCisAppealablePenaltiesRequest]
+object GetAppealablePenaltiesRequest {
+  implicit val format: OFormat[GetAppealablePenaltiesRequest] = Json.format[GetAppealablePenaltiesRequest]
 }
 
-case class GetCisAppealablePenaltiesResponse(
+case class GetAppealablePenaltiesResponse(
                                               total: Int,
-                                              appealablePenalties: List[GetCisAppealablePenaltyResponse]
+                                              appealablePenalties: List[GetAppealablePenaltyResponse]
                                             )
 
-object GetCisAppealablePenaltiesResponse {
-  implicit val format: OFormat[GetCisAppealablePenaltiesResponse] = Json.format[GetCisAppealablePenaltiesResponse]
+object GetAppealablePenaltiesResponse {
+  implicit val format: OFormat[GetAppealablePenaltiesResponse] = Json.format[GetAppealablePenaltiesResponse]
 }
 
-case class GetCisAppealablePenaltyRequest(
-                                           penaltyId: Long,
-                                           hmrcOfficeNumber: String,
-                                           schemeReferenceNumber: String
-                                         )
+case class GetAppealablePenaltyRequest(
+                                        penaltyId: Long,
+                                        hmrcOfficeNumber: String,
+                                        schemeReferenceNumber: String
+                                      )
 
-object GetCisAppealablePenaltyRequest {
-  implicit val format: OFormat[GetCisAppealablePenaltyRequest] = Json.format[GetCisAppealablePenaltyRequest]
+object GetAppealablePenaltyRequest {
+  implicit val format: OFormat[GetAppealablePenaltyRequest] = Json.format[GetAppealablePenaltyRequest]
 }
 
-case class GetCisAppealablePenaltyResponse(
-                                            uniqueId: Option[Long],
-                                            issueDate: Option[LocalDate],
+case class GetAppealablePenaltyResponse(
+                                            uniqueId        : Option[Long],
+                                            issueDate       : Option[LocalDate],
                                             taxPeriodEndDate: Option[LocalDate],
-                                            penaltyType: Option[String],
-                                            penaltyAmount: Option[BigDecimal]
+                                            penaltyType     : Option[String],
+                                            penaltyAmount   : Option[BigDecimal]
                                           )
 
-object GetCisAppealablePenaltyResponse {
-  implicit val format: OFormat[GetCisAppealablePenaltyResponse] = Json.format[GetCisAppealablePenaltyResponse]
+object GetAppealablePenaltyResponse {
+  implicit val format: OFormat[GetAppealablePenaltyResponse] = Json.format[GetAppealablePenaltyResponse]
 }

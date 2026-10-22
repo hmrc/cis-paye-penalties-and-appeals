@@ -42,17 +42,17 @@ class ManageCisControllerISpec extends BaseSpec
 
   def stubGetCisAppealablePenaltiesResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/cis/penalties", Status.OK,
-      Json.toJson(GetCisAppealablePenaltiesResponse(
+      Json.toJson(GetAppealablePenaltiesResponse(
         total = 2,
         appealablePenalties = List(
-          GetCisAppealablePenaltyResponse(
+          GetAppealablePenaltyResponse(
             uniqueId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
             penaltyType = Some("CIS003"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
-          GetCisAppealablePenaltyResponse(
+          GetAppealablePenaltyResponse(
             uniqueId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
@@ -65,7 +65,7 @@ class ManageCisControllerISpec extends BaseSpec
 
   def stubGetAppealablePenaltyResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/cis/penalty", Status.OK,
-      Json.toJson(GetCisAppealablePenaltyResponse(
+      Json.toJson(GetAppealablePenaltyResponse(
         uniqueId = None,
         issueDate = Some(LocalDate.of(2023, 1, 1)),
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
@@ -111,7 +111,7 @@ class ManageCisControllerISpec extends BaseSpec
         stubAuthorised()
         stubGetCisAppealablePenaltiesResponse()
         val jsonBody = Json.toJson(
-          GetCisAppealablePenaltiesRequest(
+          GetAppealablePenaltiesRequest(
             hmrcOfficeNumber = "123",
             schemeReferenceNumber = "AB456",
             startRow = 1L,
@@ -129,7 +129,7 @@ class ManageCisControllerISpec extends BaseSpec
         stubUnauthorised()
         stubGetCisAppealablePenaltiesResponse()
         val jsonBody = Json.toJson(
-          GetCisAppealablePenaltiesRequest(
+          GetAppealablePenaltiesRequest(
             hmrcOfficeNumber = "123",
             schemeReferenceNumber = "AB456",
             startRow = 1,
@@ -146,7 +146,7 @@ class ManageCisControllerISpec extends BaseSpec
 
     "call getCisAppealablePenalty" when {
 
-      val testRequest = GetCisAppealablePenaltyRequest(
+      val testRequest = GetAppealablePenaltyRequest(
         penaltyId = 1L,
         hmrcOfficeNumber = "840123",
         schemeReferenceNumber = "098345"

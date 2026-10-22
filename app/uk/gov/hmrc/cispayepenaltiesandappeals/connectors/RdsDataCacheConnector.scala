@@ -35,6 +35,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
 
   private val rdsDatacachePath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/pas"
 
+  // CIS
   def createCisAppeal(createCisAppealRequest: CreateCisAppealRequest)(implicit hc: HeaderCarrier): Future[CreateCisAppealResponse] =
     val url: URL = url"$rdsDatacachePath/cis/appeal"
     http.post(url)
@@ -49,11 +50,11 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           throw new RuntimeException(e.getMessage)
       }
 
-  def getCisAppealablePenalties(request: GetCisAppealablePenaltiesRequest)(implicit hc: HeaderCarrier): Future[GetCisAppealablePenaltiesResponse] =
+  def getCisAppealablePenalties(request: GetAppealablePenaltiesRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltiesResponse] =
     val url: URL = url"$rdsDatacachePath/cis/penalties"
     http.post(url)
       .withBody(Json.toJson(request))
-      .execute[GetCisAppealablePenaltiesResponse]
+      .execute[GetAppealablePenaltiesResponse]
       .recover {
         case e: UpstreamErrorResponse =>
           logger.error(s"[RdsDataCacheConnector][getCisAppealablePenalties]: Upstream error - ${e.getMessage}")
@@ -63,17 +64,32 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           throw new RuntimeException(e.getMessage)
       }
 
-  def getCisAppealablePenalty(request: GetCisAppealablePenaltyRequest)(implicit hc: HeaderCarrier): Future[GetCisAppealablePenaltyResponse] =
+  def getCisAppealablePenalty(request: GetAppealablePenaltyRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltyResponse] =
     val url: URL = url"$rdsDatacachePath/cis/penalty"
     http.post(url)
       .withBody(Json.toJson(request))
-      .execute[GetCisAppealablePenaltyResponse]
+      .execute[GetAppealablePenaltyResponse]
       .recover {
         case e: UpstreamErrorResponse =>
           logger.error(s"[RdsDataCacheConnector][getCisAppealablePenalty]: Upstream error - ${e.getMessage}")
           throw e
         case e: Throwable =>
           logger.error(s"[RdsDataCacheConnector][getCisAppealablePenalty]: ${e.getMessage}")
+          throw new RuntimeException(e.getMessage)
+      }
+
+  // PAYE
+  def getPayeAppealablePenalties(request: GetAppealablePenaltiesRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltiesResponse] =
+    val url: URL = url"$rdsDatacachePath/paye/penalties"
+    http.post(url)
+      .withBody(Json.toJson(request))
+      .execute[GetAppealablePenaltiesResponse]
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.error(s"[RdsDataCacheConnector][getPayeAppealablePenalties]: Upstream error - ${e.getMessage}")
+          throw e
+        case e: Throwable =>
+          logger.error(s"[RdsDataCacheConnector][getPayeAppealablePenalties]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
 }
