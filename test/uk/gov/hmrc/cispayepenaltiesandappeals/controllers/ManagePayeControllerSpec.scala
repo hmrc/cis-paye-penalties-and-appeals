@@ -23,7 +23,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers.{contentAsJson, status}
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.SpecBase
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, CreateCisAppealResponse, GetAppealablePenaltiesRequest, GetAppealablePenaltiesResponse, GetAppealablePenaltyResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateAppealRequest, CreateAppealResponse, GetAppealablePenaltiesRequest, GetAppealablePenaltiesResponse, GetAppealablePenaltyResponse}
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.{CisService, PayeService}
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -93,6 +93,48 @@ class ManagePayeControllerSpec extends SpecBase {
           .thenReturn(Future.failed(new RuntimeException("unexpected")))
 
         val result: Future[Result] = controller.getPayeAppealablePenalties()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
+      }
+    }
+
+    "POST /paye/appeal (createPayeAppeal)" - {
+
+      val testRequest: CreateAppealRequest = CreateAppealRequest(penaltyId = 1L)
+      val testResponse: CreateAppealResponse = CreateAppealResponse(created = true)
+
+      "return CREATED with response when service returns successfully" in new BaseSetup {
+        when(mockPayeService.createPayeAppeal(eqTo(testRequest))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+
+        val result: Future[Result] = controller.createPayeAppeal()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe CREATED
+        contentAsJson(result) mustBe Json.toJson(testResponse)
+        verify(mockPayeService).createPayeAppeal(eqTo(testRequest))(any[HeaderCarrier])
+      }
+
+      "return BAD_REQUEST with message when given an invalid json body" in new BaseSetup {
+        val result: Future[Result] = controller.createPayeAppeal()(fakeRequest.withBody(Json.obj("invalid" -> "data")))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+        (contentAsJson(result) \ "errors").isDefined mustBe true
+      }
+
+      "return BAD_REQUEST when penaltyId is the wrong type" in new BaseSetup {
+        val result: Future[Result] = controller.createPayeAppeal()(fakeRequest.withBody(Json.obj("penaltyId" -> "abc")))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+      }
+
+      "return 500 Unexpected error on unknown exception" in new BaseSetup {
+        when(mockPayeService.createPayeAppeal(any[CreateAppealRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("unexpected")))
+
+        val result: Future[Result] = controller.createPayeAppeal()(fakeRequest.withBody(Json.toJson(testRequest)))
 
         status(result) mustBe INTERNAL_SERVER_ERROR
         (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"

@@ -26,8 +26,8 @@ import scala.concurrent.Future
 @Singleton
 class CisService @Inject()(rdsDataCacheConnector: RdsDataCacheConnector) {
 
-  def createCisAppeal(createCisAppealRequest: CreateCisAppealRequest)
-                     (implicit hc: HeaderCarrier): Future[CreateCisAppealResponse] =
+  def createCisAppeal(createCisAppealRequest: CreateAppealRequest)
+                     (implicit hc: HeaderCarrier): Future[CreateAppealResponse] =
     rdsDataCacheConnector.createCisAppeal(createCisAppealRequest)
 
   def getCisAppealablePenalties(request: GetAppealablePenaltiesRequest)

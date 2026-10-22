@@ -19,11 +19,11 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 import uk.gov.hmrc.cispayepenaltiesandappeals.itUtil.ApplicationWithWiremock
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.http.Status
-import play.api.http.Status.{FORBIDDEN, OK}
+import play.api.http.Status.{CREATED, FORBIDDEN, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.BaseSpec
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{GetAppealablePenaltiesRequest, GetAppealablePenaltiesResponse, GetAppealablePenaltyResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateAppealRequest, CreateAppealResponse, GetAppealablePenaltiesRequest, GetAppealablePenaltiesResponse, GetAppealablePenaltyResponse}
 
 import java.time.LocalDate
 
@@ -32,6 +32,11 @@ class ManagePayeControllerISpec extends BaseSpec
 
   val servicePrefix = s"http://localhost:$port/cis-paye-penalties-and-appeals"
   lazy val getPayeAppealablePenaltiesUrl = s"$servicePrefix/paye/penalties"
+  lazy val createPayeAppealUrl = s"$servicePrefix/paye/appeal"
+
+  def stubCreatePayeAppealResponse(): Unit =
+    stubPost("/rds-datacache-proxy/pas/paye/appeal", Status.CREATED,
+      Json.toJson(CreateAppealResponse(created = true)).toString)
 
   def stubGetPayeAppealablePenaltiesResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/paye/penalties", Status.OK,
@@ -84,6 +89,33 @@ class ManagePayeControllerISpec extends BaseSpec
         stubGetPayeAppealablePenaltiesResponse()
 
         val result = wsClient.url(getPayeAppealablePenaltiesUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
+      }
+    }
+
+    "call createPayeAppeal" when {
+
+      val jsonBody = Json.toJson(CreateAppealRequest(penaltyId = 1L))
+
+      "return a 201:Created:: authorised request" in {
+        stubAuthorised()
+        stubCreatePayeAppealResponse()
+
+        val result = wsClient.url(createPayeAppealUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe CREATED
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubCreatePayeAppealResponse()
+
+        val result = wsClient.url(createPayeAppealUrl)
           .withHttpHeaders("Authorization" -> "Bearer123")
           .post(jsonBody)
 

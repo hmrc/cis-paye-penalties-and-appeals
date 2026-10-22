@@ -36,18 +36,18 @@ class ManageCisControllerSpec extends SpecBase {
 
     "POST /cis/appeal (createCisAppeal)" - {
 
-      val testCreateCisAppealRequest: CreateCisAppealRequest   = CreateCisAppealRequest(penaltyId = 1L)
-      val testCreateCisAppealResponse: CreateCisAppealResponse = CreateCisAppealResponse(created = true)
+      val testCreateAppealRequest: CreateAppealRequest   = CreateAppealRequest(penaltyId = 1L)
+      val testCreateAppealResponse: CreateAppealResponse = CreateAppealResponse(created = true)
 
       "return CREATED with response when service returns successfully" in new BaseSetup {
-        when(mockCisService.createCisAppeal(eqTo(testCreateCisAppealRequest))(any[HeaderCarrier]))
-          .thenReturn(Future.successful(testCreateCisAppealResponse))
+        when(mockCisService.createCisAppeal(eqTo(testCreateAppealRequest))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testCreateAppealResponse))
 
-        val result: Future[Result] = controller.createCisAppeal()(fakeRequest.withBody(Json.toJson(testCreateCisAppealRequest)))
+        val result: Future[Result] = controller.createCisAppeal()(fakeRequest.withBody(Json.toJson(testCreateAppealRequest)))
 
         status(result) mustBe CREATED
-        contentAsJson(result) mustBe Json.toJson(testCreateCisAppealResponse)
-        verify(mockCisService).createCisAppeal(eqTo(testCreateCisAppealRequest))(any[HeaderCarrier])
+        contentAsJson(result) mustBe Json.toJson(testCreateAppealResponse)
+        verify(mockCisService).createCisAppeal(eqTo(testCreateAppealRequest))(any[HeaderCarrier])
       }
 
       "return BAD_REQUEST with message when given an invalid json body" in new BaseSetup {
@@ -66,10 +66,10 @@ class ManageCisControllerSpec extends SpecBase {
       }
 
       "return 500 Unexpected error on unknown exception" in new BaseSetup {
-        when(mockCisService.createCisAppeal(any[CreateCisAppealRequest])(any[HeaderCarrier]))
+        when(mockCisService.createCisAppeal(any[CreateAppealRequest])(any[HeaderCarrier]))
           .thenReturn(Future.failed(new RuntimeException("unexpected")))
 
-        val result: Future[Result] = controller.createCisAppeal()(fakeRequest.withBody(Json.toJson(testCreateCisAppealRequest)))
+        val result: Future[Result] = controller.createCisAppeal()(fakeRequest.withBody(Json.toJson(testCreateAppealRequest)))
 
         status(result) mustBe INTERNAL_SERVER_ERROR
         (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"

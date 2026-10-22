@@ -32,9 +32,9 @@ final class CisServiceSpec extends SpecBase {
 
     "createCisAppeal" - {
 
-      def createCisAppealRequest(penaltyId: Long = 1L) = CreateCisAppealRequest(penaltyId = penaltyId)
+      def createCisAppealRequest(penaltyId: Long = 1L) = CreateAppealRequest(penaltyId = penaltyId)
 
-      val createCisAppealResponse = CreateCisAppealResponse(created = true)
+      val createCisAppealResponse = CreateAppealResponse(created = true)
 
       "must delegate to connector (happy path)" in {
         val connector = mock[RdsDataCacheConnector]
@@ -44,7 +44,7 @@ final class CisServiceSpec extends SpecBase {
         when(connector.createCisAppeal(eqTo(createCisAppealRequest()))(any[HeaderCarrier]))
           .thenReturn(Future.successful(createCisAppealResponse))
 
-        val result: CreateCisAppealResponse = service.createCisAppeal(createCisAppealRequest()).futureValue
+        val result: CreateAppealResponse = service.createCisAppeal(createCisAppealRequest()).futureValue
         result mustBe createCisAppealResponse
 
         verify(connector).createCisAppeal(eqTo(createCisAppealRequest()))(any[HeaderCarrier])
@@ -100,7 +100,7 @@ final class CisServiceSpec extends SpecBase {
         service.createCisAppeal(request2).futureValue mustBe createCisAppealResponse
         service.createCisAppeal(request3).futureValue mustBe createCisAppealResponse
 
-        verify(connector, times(3)).createCisAppeal(any[CreateCisAppealRequest])(any[HeaderCarrier])
+        verify(connector, times(3)).createCisAppeal(any[CreateAppealRequest])(any[HeaderCarrier])
         verifyNoMoreInteractions(connector)
       }
 
