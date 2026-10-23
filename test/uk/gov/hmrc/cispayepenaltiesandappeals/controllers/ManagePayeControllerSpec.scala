@@ -24,7 +24,7 @@ import play.api.mvc.Result
 import play.api.test.Helpers.{contentAsJson, status}
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.SpecBase
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
-import uk.gov.hmrc.cispayepenaltiesandappeals.services.{CisService, PayeService}
+import uk.gov.hmrc.cispayepenaltiesandappeals.services.PayeService
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDate
