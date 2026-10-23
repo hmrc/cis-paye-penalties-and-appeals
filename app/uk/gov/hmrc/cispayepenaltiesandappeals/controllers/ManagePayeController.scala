@@ -20,7 +20,7 @@ import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.IdentifierAction
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.GetAppealablePenaltiesRequest
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateAppealRequest, GetAppealablePenaltiesRequest}
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.PayeService
 
 import javax.inject.{Inject, Singleton}
@@ -33,6 +33,25 @@ class ManagePayeController @Inject()(
                                      service: PayeService
                                    )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
   
+  def createPayeAppeal(): Action[JsValue] = auth.async(parse.json) { implicit request =>
+    request.body
+      .validate[CreateAppealRequest]
+      .fold(
+        errs =>
+          Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
+        body =>
+          service
+            .createPayeAppeal(body)
+            .map { result =>
+              Created(Json.toJson(result))
+            }
+            .recover { case t =>
+              logger.error("[ManagePayeController][createPayeAppeal] failed", t)
+              InternalServerError(Json.obj("message" -> "Unexpected error"))
+            }
+      )
+  }
+
   def getPayeAppealablePenalties: Action[JsValue] = auth.async(parse.json) { implicit request =>
     request.body
       .validate[GetAppealablePenaltiesRequest]

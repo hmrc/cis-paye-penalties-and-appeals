@@ -37,9 +37,9 @@ class ManageCisControllerISpec extends BaseSpec
   lazy val getCisTaxpayerUrl = s"$servicePrefix/cis/taxpayer"
   val getCisTaxpayerProxyUrl = "/rds-datacache-proxy/cis-taxpayer"
 
-  def stubCreateCisAppealResponse(): Unit = {
+  def stubCreateAppealResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/cis/appeal", Status.CREATED,
-      Json.toJson(CreateCisAppealResponse(created = true)).toString)
+      Json.toJson(CreateAppealResponse(created = true)).toString)
   }
 
   def stubGetCisAppealablePenaltiesResponse(): Unit = {
@@ -104,9 +104,9 @@ class ManageCisControllerISpec extends BaseSpec
 
       "return a 201:Created:: authorised request" in {
         stubAuthorised()
-        stubCreateCisAppealResponse()
+        stubCreateAppealResponse()
         val jsonBody = Json.toJson(
-          CreateCisAppealRequest(penaltyId = 1L))
+          CreateAppealRequest(penaltyId = 1L))
 
         val result = wsClient.url(createCisAppealUrl)
           .withHttpHeaders("Authorization" -> "Bearer123")
@@ -117,9 +117,9 @@ class ManageCisControllerISpec extends BaseSpec
 
       "return a 403:Forbidden:: unauthorised request" in {
         stubUnauthorised()
-        stubCreateCisAppealResponse()
+        stubCreateAppealResponse()
         val jsonBody = Json.toJson(
-          CreateCisAppealRequest(penaltyId = 1L))
+          CreateAppealRequest(penaltyId = 1L))
 
         val result = wsClient.url(createCisAppealUrl)
           .withHttpHeaders("Authorization" -> "Bearer123")

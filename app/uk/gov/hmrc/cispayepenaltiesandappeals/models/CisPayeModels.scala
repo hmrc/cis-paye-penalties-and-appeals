@@ -20,20 +20,20 @@ import play.api.libs.json.{Json, OFormat}
 
 import java.time.LocalDate
 
-case class CreateCisAppealRequest(
+case class CreateAppealRequest(
                               penaltyId: Long
                             )
 
-object CreateCisAppealRequest {
-  implicit val format: OFormat[CreateCisAppealRequest] = Json.format[CreateCisAppealRequest]
+object CreateAppealRequest {
+  implicit val format: OFormat[CreateAppealRequest] = Json.format[CreateAppealRequest]
 }
 
-case class CreateCisAppealResponse(
+case class CreateAppealResponse(
                                    created: Boolean
                                  )
 
-object CreateCisAppealResponse {
-  implicit val format: OFormat[CreateCisAppealResponse] = Json.format[CreateCisAppealResponse]
+object CreateAppealResponse {
+  implicit val format: OFormat[CreateAppealResponse] = Json.format[CreateAppealResponse]
 }
 
 case class GetAppealablePenaltiesRequest(
