@@ -125,4 +125,18 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           logger.error(s"[RdsDataCacheConnector][getPayeAppealablePenalties]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
+
+  def getPayeAppealablePenalty(request: GetAppealablePenaltyRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltyResponse] =
+    val url: URL = url"$rdsDatacachePath/paye/penalty"
+    http.post(url)
+      .withBody(Json.toJson(request))
+      .execute[GetAppealablePenaltyResponse]
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.error(s"[RdsDataCacheConnector][getPayeAppealablePenalty]: Upstream error - ${e.getMessage}")
+          throw e
+        case e: Throwable =>
+          logger.error(s"[RdsDataCacheConnector][getPayeAppealablePenalty]: ${e.getMessage}")
+          throw new RuntimeException(e.getMessage)
+      }
 }
