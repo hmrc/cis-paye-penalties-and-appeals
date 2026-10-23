@@ -472,6 +472,95 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       ex mustBe a[RuntimeException]
     }
 
+    "getCisPenaltyAllowed" should {
+
+      val url = "/rds-datacache-proxy/pas/cis/penalties/access-allowed"
+
+      val payload = GetPenaltyAllowedRequest(
+        districtNumber = 1L,
+        employerReference = "hdz",
+        uniqueId = 1L
+      )
+
+      val appealablePenaltiesResponse = Json.obj(
+        "allowed" -> true
+      )
+
+      "return GetAppealablePenaltiesResponse when BE returns OK with valid JSON" in {
+        val payloadJson = Json.toJson(payload)
+
+        stubFor(
+          post(urlPathEqualTo(url))
+            .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+            .willReturn(
+              aResponse()
+                .withStatus(OK)
+                .withBody(appealablePenaltiesResponse.toString())
+            )
+        )
+
+        val result = connector.getCisPenaltyAllowed(payload).futureValue
+
+        result mustBe GetPenaltyAllowedResponse(
+          allowed = true
+        )
+      }
+
+      "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
+        val payloadJson = Json.toJson(payload)
+
+        stubFor(
+          post(urlPathEqualTo(url))
+            .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+            .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+        )
+
+        val ex = intercept[Exception] {
+          connector.getCisPenaltyAllowed(payload).futureValue
+        }
+        ex.getMessage must include("500")
+      }
+
+      "propagate an upstream error when BE returns BAD_REQUEST" in {
+        val payloadJson = Json.toJson(payload)
+
+        stubFor(
+          post(urlPathEqualTo(url))
+            .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+            .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Invalid request"))
+        )
+
+        val ex = intercept[Exception] {
+          connector.getCisPenaltyAllowed(payload).futureValue
+        }
+        ex.getMessage must include("400")
+      }
+
+      "propagate Exception when BE throws unexpected JSResult" in {
+        val payloadJson = Json.toJson(payload)
+        val connector = app.injector.instanceOf[RdsDataCacheConnector]
+
+        stubFor(
+          post(urlPathEqualTo(url))
+            .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+            .willReturn(
+              aResponse()
+                .withStatus(OK)
+                .withBody(
+                  s"""{
+                     |  "uniqueId": "ANY_VALUE"
+                     |}""".stripMargin
+                )
+            )
+        )
+
+        val ex = intercept[Exception] {
+          connector.getCisPenaltyAllowed(payload).futureValue
+        }
+
+        ex mustBe a[RuntimeException]
+      }
+    }
   }
 
   // PAYE
@@ -592,6 +681,96 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
 
       val ex = intercept[Exception] {
         connector.getPayeAppealablePenalties(payload).futureValue
+      }
+
+      ex mustBe a[RuntimeException]
+    }
+  }
+
+  "getPayePenaltyAllowed" should {
+
+    val url = "/rds-datacache-proxy/pas/paye/penalties/access-allowed"
+
+    val payload = GetPenaltyAllowedRequest(
+      districtNumber = 1L,
+      employerReference = "hdz",
+      uniqueId = 1L
+    )
+
+    val appealablePenaltiesResponse = Json.obj(
+      "allowed" -> true
+    )
+
+    "return GetAppealablePenaltiesResponse when BE returns OK with valid JSON" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(appealablePenaltiesResponse.toString())
+          )
+      )
+
+      val result = connector.getPayePenaltyAllowed(payload).futureValue
+
+      result mustBe GetPenaltyAllowedResponse(
+        allowed = true
+      )
+    }
+
+    "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getPayePenaltyAllowed(payload).futureValue
+      }
+      ex.getMessage must include("500")
+    }
+
+    "propagate an upstream error when BE returns BAD_REQUEST" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Invalid request"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getPayePenaltyAllowed(payload).futureValue
+      }
+      ex.getMessage must include("400")
+    }
+
+    "propagate Exception when BE throws unexpected JSResult" in {
+      val payloadJson = Json.toJson(payload)
+      val connector = app.injector.instanceOf[RdsDataCacheConnector]
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "uniqueId": "ANY_VALUE"
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getPayePenaltyAllowed(payload).futureValue
       }
 
       ex mustBe a[RuntimeException]

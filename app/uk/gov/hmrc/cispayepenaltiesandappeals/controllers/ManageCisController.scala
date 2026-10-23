@@ -20,7 +20,7 @@ import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.IdentifierAction
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, GetAppealablePenaltiesRequest, GetAppealablePenaltyRequest, GetCisTaxpayerRequest}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.CisService
 import uk.gov.hmrc.http.UpstreamErrorResponse
 
@@ -111,6 +111,25 @@ class ManageCisController @Inject()(
               case t =>
                 logger.error("[ManageCisController][getCisTaxpayer] failed", t)
                 InternalServerError(Json.obj("message" -> "Unexpected error"))
+            }
+      )
+  }
+
+  def getCisPenaltyAllowed: Action[JsValue] = auth.async(parse.json) { implicit request =>
+    request.body
+      .validate[GetPenaltyAllowedRequest]
+      .fold(
+        errs =>
+          Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
+        body =>
+          service
+            .getCisPenaltyAllowed(body)
+            .map { result =>
+              Ok(Json.toJson(result))
+            }
+            .recover { case t =>
+              logger.error("[ManageCisController][getCisPenaltyAllowed] failed", t)
+              InternalServerError(Json.obj("message" -> "Unexpected error"))
             }
       )
   }
