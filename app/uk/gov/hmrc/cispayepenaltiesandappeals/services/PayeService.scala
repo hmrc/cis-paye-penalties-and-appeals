@@ -17,7 +17,7 @@
 package uk.gov.hmrc.cispayepenaltiesandappeals.services
 
 import uk.gov.hmrc.cispayepenaltiesandappeals.connectors.RdsDataCacheConnector
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{GetAppealablePenaltiesRequest, GetAppealablePenaltiesResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.{GetAppealablePenaltiesRequest, GetAppealablePenaltiesResponse, GetPenaltyAllowedRequest, GetPenaltyAllowedResponse}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -29,5 +29,9 @@ class PayeService @Inject()(rdsDataCacheConnector: RdsDataCacheConnector) {
   def getPayeAppealablePenalties(request: GetAppealablePenaltiesRequest)
                                 (implicit hc: HeaderCarrier): Future[GetAppealablePenaltiesResponse] =
     rdsDataCacheConnector.getPayeAppealablePenalties(request)
+
+  def getPayePenaltyAllowed(request: GetPenaltyAllowedRequest)
+                          (implicit hc: HeaderCarrier): Future[GetPenaltyAllowedResponse] =
+    rdsDataCacheConnector.getPayePenaltyAllowed(request)
 }
 

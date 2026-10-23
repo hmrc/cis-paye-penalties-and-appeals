@@ -1,10 +1,12 @@
 # microservice specific routes
 
 # CIS routes
-POST        /cis/appeal              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.createCisAppeal()
-POST        /cis/penalties           uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalties()
-POST        /cis/penalty             uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalty()
-POST        /cis/taxpayer            uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisTaxpayer()
+POST        /cis/appeal                                                 uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.createCisAppeal()
+POST        /cis/penalties                                              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalties()
+POST        /cis/penalty                                                uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalty()
+POST        /cis/taxpayer                                               uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisTaxpayer()
+POST        /cis/penalties/access-allowed                               uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisPenaltyAllowed()
 
 # PAYE routes
-POST        /paye/penalties          uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayeAppealablePenalties()
+POST        /paye/penalties                                             uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayeAppealablePenalties()
+POST        /paye/penalties/access-allowed                              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayeAppealablePenalties()

@@ -35,6 +35,7 @@ class ManageCisControllerISpec extends BaseSpec
   lazy val getCisAppealablePenaltiesUrl = s"$servicePrefix/cis/penalties"
   lazy val getAppealablePenaltyUrl = s"$servicePrefix/cis/penalty"
   lazy val getCisTaxpayerUrl = s"$servicePrefix/cis/taxpayer"
+  lazy val getCisPenaltiesAllowedUrl = s"$servicePrefix/cis/penalties/access-allowed"
   val getCisTaxpayerProxyUrl = "/rds-datacache-proxy/cis-taxpayer"
 
   def stubCreateCisAppealResponse(): Unit = {
@@ -96,6 +97,11 @@ class ManageCisControllerISpec extends BaseSpec
         utr = Some("1234567890"),
         enrolledSig = None
       )).toString)
+  }
+
+  def stubGetPenaltyAllowedResponse(): Unit = {
+    stubPost("/rds-datacache-proxy/pas/cis/penalties/access-allowed", Status.OK,
+      Json.toJson(GetPenaltyAllowedResponse(allowed = true)).toString)
   }
 
   "ManageCisController" should {
@@ -243,6 +249,43 @@ class ManageCisControllerISpec extends BaseSpec
           .post(jsonBody)
 
         result.status shouldBe NOT_FOUND
+      }
+    }
+
+    "call getCisPenaltyAllowed" when {
+
+      "return a 200:Ok:: authorised request" in {
+        stubAuthorised()
+        stubGetPenaltyAllowedResponse()
+        val jsonBody = Json.toJson(
+          GetPenaltyAllowedRequest(
+            districtNumber = 1L,
+            employerReference = "hdz",
+            uniqueId = 1L
+          ))
+
+        val result = wsClient.url(getCisPenaltiesAllowedUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe OK
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubGetPenaltyAllowedResponse()
+        val jsonBody = Json.toJson(
+          GetPenaltyAllowedRequest(
+            districtNumber = 1L,
+            employerReference = "hdz",
+            uniqueId = 1L
+          ))
+
+        val result = wsClient.url(getCisPenaltiesAllowedUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
       }
     }
   }
