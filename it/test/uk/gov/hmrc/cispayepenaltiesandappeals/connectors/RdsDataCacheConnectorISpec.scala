@@ -38,7 +38,8 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  private val connector: RdsDataCacheConnector = app.injector.instanceOf[RdsDataCacheConnector]
+  private val connector: RdsDataCacheConnector         = app.injector.instanceOf[RdsDataCacheConnector]
+  private val connectorWithStub: RdsDataCacheConnector = appWithStub.injector.instanceOf[RdsDataCacheConnector]
 
   // CIS
   "createCisAppeal" should {
@@ -47,7 +48,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
 
     val payload = CreateCisAppealRequest(penaltyId = 1)
 
-    "return CreateCisAppealResponse when BE returns OK with valid JSON" in {
+    "return CreateCisAppealResponse when RDS Datacache returns OK with valid JSON" in {
       val payloadJson = Json.toJson(payload)
 
       stubFor(
@@ -65,6 +66,30 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
 
       val result = connector.createCisAppeal(payload).futureValue
+
+      result mustBe CreateCisAppealResponse(created = true)
+    }
+
+    "return CreateCisAppealResponse when stub returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/cis/appeal"
+
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "created": true
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connectorWithStub.createCisAppeal(payload).futureValue
 
       result mustBe CreateCisAppealResponse(created = true)
     }
@@ -156,7 +181,44 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
     )
 
-    "return GetAppealablePenaltiesRequest when BE returns OK with valid JSON" in {
+    "return GetAppealablePenaltiesResponse when RDS Datacache returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/cis/penalties"
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(penaltiesReturnJson.toString())
+          )
+      )
+
+      val result = connectorWithStub.getCisAppealablePenalties(payload).futureValue
+
+      result mustBe GetAppealablePenaltiesResponse(
+        total = 2,
+        appealablePenalties = List(
+          GetAppealablePenaltyResponse(
+            uniqueId = Some(10001),
+            issueDate = Some(LocalDate.of(2023, 1, 1)),
+            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+            penaltyType = Some("CIS003"),
+            penaltyAmount = Some(BigDecimal(999.23))
+          ),
+          GetAppealablePenaltyResponse(
+            uniqueId = Some(10002),
+            issueDate = Some(LocalDate.of(2026, 2, 20)),
+            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
+            penaltyType = Some("CIS005"),
+            penaltyAmount = Some(BigDecimal(928.23))
+          )
+        )
+      )
+    }
+
+    "return GetAppealablePenaltiesResponse when stub returns OK with valid JSON" in {
       val payloadJson = Json.toJson(payload)
 
       stubFor(
@@ -258,7 +320,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       schemeReferenceNumber = "098345"
     )
 
-    "return GetAppealablePenaltyResponse when BE returns OK with valid JSON" in {
+    "return GetAppealablePenaltyResponse when RDS Datacache returns OK with valid JSON" in {
       val payloadJson = Json.toJson(payload)
 
       stubFor(
@@ -279,6 +341,38 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
 
       val result = connector.getCisAppealablePenalty(payload).futureValue
+
+      result mustBe GetAppealablePenaltyResponse(
+        uniqueId = None,
+        issueDate = Some(LocalDate.of(2023, 1, 1)),
+        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+        penaltyType = Some("CIS003"),
+        penaltyAmount = Some(BigDecimal("999.23"))
+      )
+    }
+
+    "return GetAppealablePenaltyResponse when stub returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/cis/penalty"
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "issueDate": "2023-01-01",
+                   |  "taxPeriodEndDate": "2023-04-01",
+                   |  "penaltyType": "CIS003",
+                   |  "penaltyAmount": 999.23
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connectorWithStub.getCisAppealablePenalty(payload).futureValue
 
       result mustBe GetAppealablePenaltyResponse(
         uniqueId = None,
@@ -355,11 +449,12 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       schemeReferenceNumber = "AB456"
     )
 
-    "return GetCisTaxpayerResponse when BE returns OK with valid JSON" in {
+    "return GetCisTaxpayerResponse when RDS Datacache returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/cis/taxpayer"
       val payloadJson = Json.obj("taxOfficeNumber" -> "123", "taxOfficeReference" -> "AB456")
 
       stubFor(
-        post(urlPathEqualTo(url))
+        post(urlPathEqualTo(stubUrl))
           .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
           .willReturn(
             aResponse()
@@ -380,7 +475,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
           )
       )
 
-      val result = connector.getCisTaxpayer(payload).futureValue
+      val result = connectorWithStub.getCisTaxpayer(payload).futureValue
 
       result mustBe GetCisTaxpayerResponse(
         uniqueId = "1000123",

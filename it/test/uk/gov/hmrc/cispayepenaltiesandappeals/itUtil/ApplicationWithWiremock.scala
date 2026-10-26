@@ -35,7 +35,7 @@ trait ApplicationWithWiremock
 
   lazy val wireMock = new WireMock
 
-  val extraConfig: Map[String, Any] = {
+  def extraConfig(stubEnabled: Boolean = false): Map[String, Any] = {
     Map[String, Any](
       "microservice.services.auth.host" -> WireMockConstants.stubHost,
       "microservice.services.auth.port" -> WireMockConstants.stubPort,
@@ -43,13 +43,18 @@ trait ApplicationWithWiremock
       "microservice.services.rds-datacache-proxy.port" -> WireMockConstants.stubPort,
       "microservice.services.cis-paye-penalties-and-appeals-stub.port" -> WireMockConstants.stubPort,
       "microservice.services.cis-paye-penalties-and-appeals-stub.host" -> WireMockConstants.stubHost,
-      "features.stub-rds-datacache-enabled" -> false
+      "features.stub-rds-datacache-enabled" -> stubEnabled
     )
   }
 
   override lazy val app: Application = new GuiceApplicationBuilder()
     .in(Environment.simple(mode = Mode.Dev))
-    .configure(extraConfig)
+    .configure(extraConfig())
+    .build()
+
+  lazy val appWithStub: Application = new GuiceApplicationBuilder()
+    .in(Environment.simple(mode = Mode.Dev))
+    .configure(extraConfig(true))
     .build()
   
   lazy val wsClient: WSClient = app.injector.instanceOf[WSClient]
