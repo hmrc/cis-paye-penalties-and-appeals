@@ -22,6 +22,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.IdentifierAction
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.PayeService
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -86,6 +87,29 @@ class ManagePayeController @Inject()(
             .recover { case t =>
               logger.error("[PayeController][getPayeAppealablePenalty] failed", t)
               InternalServerError(Json.obj("message" -> "Unexpected error"))
+            }
+      )
+  }
+
+  def getPayeTaxpayer(): Action[JsValue] = auth.async(parse.json) { implicit request =>
+    request.body
+      .validate[GetTaxpayerRequest]
+      .fold(
+        errs =>
+          Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
+        body =>
+          service
+            .getPayeTaxpayer(body)
+            .map { result =>
+              Ok(Json.toJson(result))
+            }
+            .recover {
+              case e: UpstreamErrorResponse if e.statusCode == NOT_FOUND =>
+                logger.warn(s"[ManagePayeController][getPayeTaxpayer] PAYE taxpayer not found: ${e.getMessage}")
+                NotFound(Json.obj("message" -> "PAYE taxpayer not found"))
+              case t =>
+                logger.error("[ManagePayeController][getPayeTaxpayer] failed", t)
+                InternalServerError(Json.obj("message" -> "Unexpected error"))
             }
       )
   }

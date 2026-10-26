@@ -203,7 +203,7 @@ class ManageCisControllerISpec extends BaseSpec
 
     "call getCisTaxpayer" when {
 
-      val testRequest = GetCisTaxpayerRequest(
+      val testRequest = GetTaxpayerRequest(
         hmrcOfficeNumber = "123",
         schemeReferenceNumber = "AB456"
       )

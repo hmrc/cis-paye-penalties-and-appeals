@@ -19,7 +19,7 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 import uk.gov.hmrc.cispayepenaltiesandappeals.itUtil.ApplicationWithWiremock
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.http.Status
-import play.api.http.Status.{CREATED, FORBIDDEN, OK}
+import play.api.http.Status.{CREATED, FORBIDDEN, NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.BaseSpec
@@ -34,6 +34,8 @@ class ManagePayeControllerISpec extends BaseSpec
   lazy val getPayeAppealablePenaltiesUrl = s"$servicePrefix/paye/penalties"
   lazy val getAppealablePenaltyUrl = s"$servicePrefix/paye/penalty"
   lazy val createPayeAppealUrl = s"$servicePrefix/paye/appeal"
+  lazy val getPayeTaxpayerUrl = s"$servicePrefix/paye/taxpayer"
+  val getPayeTaxpayerProxyUrl = "/rds-datacache-proxy/pas/paye/taxpayer"
 
   def stubCreatePayeAppealResponse(): Unit =
     stubPost("/rds-datacache-proxy/pas/paye/appeal", Status.CREATED,
@@ -70,6 +72,19 @@ class ManagePayeControllerISpec extends BaseSpec
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
         penaltyType = Some("PAYE3"),
         penaltyAmount = Some(BigDecimal(999.23))
+      )).toString)
+  }
+
+  def stubGetPayeTaxpayerResponse(): Unit = {
+    stubPost(getPayeTaxpayerProxyUrl, Status.OK,
+      Json.toJson(GetPayeTaxpayerResponse(
+        uniqueId = 1000123L,
+        instanceId = 2000123L,
+        districtNumber = "123",
+        employerRef = "AB456",
+        employerName1 = Some("ABC"),
+        employerName2 = None,
+        agentOwnRef = None
       )).toString)
   }
 
@@ -165,6 +180,51 @@ class ManagePayeControllerISpec extends BaseSpec
           .post(jsonBody)
 
         result.status shouldBe FORBIDDEN
+      }
+    }
+
+    "call getPayeTaxpayer" when {
+
+      val testRequest = GetTaxpayerRequest(
+        hmrcOfficeNumber = "123",
+        schemeReferenceNumber = "AB456"
+      )
+
+      "return a 200:OK:: authorised request" in {
+        stubAuthorised()
+        stubGetPayeTaxpayerResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getPayeTaxpayerUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe OK
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubGetPayeTaxpayerResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getPayeTaxpayerUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
+      }
+
+      "return a 404:NotFound:: authorised request when taxpayer does not exist" in {
+        stubAuthorised()
+        stubPost(getPayeTaxpayerProxyUrl, Status.NOT_FOUND,
+          Json.obj("message" -> "PAYE taxpayer not found").toString)
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getPayeTaxpayerUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe NOT_FOUND
       }
     }
   }

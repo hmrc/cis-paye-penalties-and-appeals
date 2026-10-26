@@ -20,7 +20,7 @@ import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.IdentifierAction
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateAppealRequest, GetAppealablePenaltiesRequest, GetAppealablePenaltyRequest, GetCisTaxpayerRequest}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateAppealRequest, GetAppealablePenaltiesRequest, GetAppealablePenaltyRequest, GetTaxpayerRequest}
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.CisService
 import uk.gov.hmrc.http.UpstreamErrorResponse
 
@@ -94,7 +94,7 @@ class ManageCisController @Inject()(
 
   def getCisTaxpayer(): Action[JsValue] = auth.async(parse.json) { implicit request =>
     request.body
-      .validate[GetCisTaxpayerRequest]
+      .validate[GetTaxpayerRequest]
       .fold(
         errs =>
           Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),

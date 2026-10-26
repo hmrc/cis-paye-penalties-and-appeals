@@ -342,10 +342,10 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  "GetCisTaxpayerRequest" should {
+  "GetTaxpayerRequest" should {
 
     "serialize to JSON correctly" in {
-      val request = GetCisTaxpayerRequest(
+      val request = GetTaxpayerRequest(
         hmrcOfficeNumber = "123",
         schemeReferenceNumber = "AB456"
       )
@@ -362,7 +362,7 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
         "schemeReferenceNumber" -> "AB456"
       )
 
-      val result = json.validate[GetCisTaxpayerRequest]
+      val result = json.validate[GetTaxpayerRequest]
 
       result mustBe a[JsSuccess[_]]
       val request = result.get
@@ -376,7 +376,7 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
         "hmrcOfficeNumber" -> "123"
       )
 
-      val result = json.validate[GetCisTaxpayerRequest]
+      val result = json.validate[GetTaxpayerRequest]
 
       result.isError mustBe true
     }
@@ -387,7 +387,7 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
         "taxOfficeReference" -> "AB456"
       )
 
-      val result = json.validate[GetCisTaxpayerRequest]
+      val result = json.validate[GetTaxpayerRequest]
 
       result.isError mustBe true
     }
@@ -509,6 +509,95 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
       )
 
       val result = json.validate[GetCisTaxpayerResponse]
+
+      result.isError mustBe true
+    }
+  }
+
+  "GetPayeTaxpayerResponse" should {
+
+    "serialize to JSON correctly" in {
+      val response = GetPayeTaxpayerResponse(
+        uniqueId = 1000123L,
+        instanceId = 2000123L,
+        districtNumber = "123",
+        employerRef = "AB456",
+        employerName1 = Some("ABC"),
+        employerName2 = Some("Builders"),
+        agentOwnRef = Some("REF1")
+      )
+
+      val json = Json.toJson(response)
+
+      (json \ "uniqueId").as[Long] mustBe 1000123L
+      (json \ "instanceId").as[Long] mustBe 2000123L
+      (json \ "districtNumber").as[String] mustBe "123"
+      (json \ "employerRef").as[String] mustBe "AB456"
+      (json \ "employerName1").as[String] mustBe "ABC"
+      (json \ "employerName2").as[String] mustBe "Builders"
+      (json \ "agentOwnRef").as[String] mustBe "REF1"
+    }
+
+    "deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "uniqueId" -> 1000123L,
+        "instanceId" -> 2000123L,
+        "districtNumber" -> "123",
+        "employerRef" -> "AB456",
+        "employerName1" -> "ABC",
+        "employerName2" -> "Builders",
+        "agentOwnRef" -> "REF1"
+      )
+
+      val result = json.validate[GetPayeTaxpayerResponse]
+
+      result mustBe a[JsSuccess[_]]
+      result.get.uniqueId mustBe 1000123L
+      result.get.instanceId mustBe 2000123L
+      result.get.districtNumber mustBe "123"
+      result.get.employerRef mustBe "AB456"
+      result.get.employerName1 mustBe Some("ABC")
+      result.get.employerName2 mustBe Some("Builders")
+      result.get.agentOwnRef mustBe Some("REF1")
+    }
+
+    "fail to deserialize when type is incorrect" in {
+      val json = Json.obj(
+        "uniqueId" -> "1000123",
+        "instanceId" -> 2000123L,
+        "districtNumber" -> "123",
+        "employerRef" -> "AB456"
+      )
+
+      val result = json.validate[GetPayeTaxpayerResponse]
+
+      result.isError mustBe true
+    }
+
+    "deserialize when only mandatory fields are present" in {
+      val json = Json.obj(
+        "uniqueId" -> 1000123L,
+        "instanceId" -> 2000123L,
+        "districtNumber" -> "123",
+        "employerRef" -> "AB456"
+      )
+
+      val result = json.validate[GetPayeTaxpayerResponse]
+
+      result mustBe a[JsSuccess[_]]
+      result.get.employerName1 mustBe None
+      result.get.employerName2 mustBe None
+      result.get.agentOwnRef mustBe None
+    }
+
+    "fail to deserialize when a mandatory field is missing" in {
+      val json = Json.obj(
+        "uniqueId" -> 1000123L,
+        "districtNumber" -> "123",
+        "employerRef" -> "AB456"
+      )
+
+      val result = json.validate[GetPayeTaxpayerResponse]
 
       result.isError mustBe true
     }

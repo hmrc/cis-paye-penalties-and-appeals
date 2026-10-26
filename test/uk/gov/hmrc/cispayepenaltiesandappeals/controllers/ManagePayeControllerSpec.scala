@@ -18,14 +18,14 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.{verify, when}
-import play.api.http.Status.{BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR, OK}
+import play.api.http.Status.{BAD_REQUEST, CREATED, INTERNAL_SERVER_ERROR, NOT_FOUND, OK, SERVICE_UNAVAILABLE}
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers.{contentAsJson, status}
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.SpecBase
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.PayeService
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -188,6 +188,80 @@ class ManagePayeControllerSpec extends SpecBase {
           .thenReturn(Future.failed(new RuntimeException("unexpected")))
 
         val result: Future[Result] = controller.createPayeAppeal()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
+      }
+    }
+
+    "POST /paye/taxpayer (getPayeTaxpayer)" - {
+
+      val testRequest = GetTaxpayerRequest(
+        hmrcOfficeNumber = "123",
+        schemeReferenceNumber = "AB456"
+      )
+
+      val testResponse = GetPayeTaxpayerResponse(
+        uniqueId = 1000123L,
+        instanceId = 2000123L,
+        districtNumber = "123",
+        employerRef = "AB456",
+        employerName1 = Some("ABC"),
+        employerName2 = None,
+        agentOwnRef = None
+      )
+
+      "return OK with response when service returns successfully" in new BaseSetup {
+        when(mockPayeService.getPayeTaxpayer(eqTo(testRequest))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+
+        val result: Future[Result] = controller.getPayeTaxpayer()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(testResponse)
+        verify(mockPayeService).getPayeTaxpayer(eqTo(testRequest))(any[HeaderCarrier])
+      }
+
+      "return BAD_REQUEST with message when given an invalid json body" in new BaseSetup {
+        val result: Future[Result] = controller.getPayeTaxpayer()(fakeRequest.withBody(Json.obj("invalid" -> "data")))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+        (contentAsJson(result) \ "errors").isDefined mustBe true
+      }
+
+      "return BAD_REQUEST when required fields are missing" in new BaseSetup {
+        val result: Future[Result] = controller.getPayeTaxpayer()(fakeRequest.withBody(Json.obj()))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+      }
+
+      "return 500 Unexpected error on unknown exception" in new BaseSetup {
+        when(mockPayeService.getPayeTaxpayer(any[GetTaxpayerRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("unexpected")))
+
+        val result: Future[Result] = controller.getPayeTaxpayer()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
+      }
+
+      "return NOT_FOUND when the taxpayer does not exist" in new BaseSetup {
+        when(mockPayeService.getPayeTaxpayer(any[GetTaxpayerRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(UpstreamErrorResponse("PAYE taxpayer not found", NOT_FOUND)))
+
+        val result: Future[Result] = controller.getPayeTaxpayer()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe NOT_FOUND
+        (contentAsJson(result) \ "message").as[String] mustBe "PAYE taxpayer not found"
+      }
+
+      "return 500 Unexpected error on other upstream errors" in new BaseSetup {
+        when(mockPayeService.getPayeTaxpayer(any[GetTaxpayerRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(UpstreamErrorResponse("Service unavailable", SERVICE_UNAVAILABLE)))
+
+        val result: Future[Result] = controller.getPayeTaxpayer()(fakeRequest.withBody(Json.toJson(testRequest)))
 
         status(result) mustBe INTERNAL_SERVER_ERROR
         (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
