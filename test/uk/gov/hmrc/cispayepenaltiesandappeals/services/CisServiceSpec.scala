@@ -340,7 +340,7 @@ final class CisServiceSpec extends SpecBase {
     "getCisTaxpayer" - {
 
       def getCisTaxpayerRequest(schemeReferenceNumber: String = "AB456") =
-        GetCisTaxpayerRequest(
+        GetTaxpayerRequest(
           hmrcOfficeNumber = "123",
           schemeReferenceNumber = schemeReferenceNumber
         )
@@ -428,7 +428,7 @@ final class CisServiceSpec extends SpecBase {
         service.getCisTaxpayer(request2).futureValue mustBe getCisTaxpayerResponse
         service.getCisTaxpayer(request3).futureValue mustBe getCisTaxpayerResponse
 
-        verify(connector, times(3)).getCisTaxpayer(any[GetCisTaxpayerRequest])(any[HeaderCarrier])
+        verify(connector, times(3)).getCisTaxpayer(any[GetTaxpayerRequest])(any[HeaderCarrier])
         verifyNoMoreInteractions(connector)
       }
 

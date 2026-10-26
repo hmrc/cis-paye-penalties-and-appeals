@@ -79,7 +79,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           throw new RuntimeException(e.getMessage)
       }
 
-  def getCisTaxpayer(request: GetCisTaxpayerRequest)(implicit hc: HeaderCarrier): Future[GetCisTaxpayerResponse] =
+  def getCisTaxpayer(request: GetTaxpayerRequest)(implicit hc: HeaderCarrier): Future[GetCisTaxpayerResponse] =
     val url: URL = url"$rdsDatacacheCisTaxpayerPath"
     val proxyRequest = Json.obj(
       "taxOfficeNumber"    -> request.hmrcOfficeNumber,
@@ -137,6 +137,20 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           throw e
         case e: Throwable =>
           logger.error(s"[RdsDataCacheConnector][getPayeAppealablePenalty]: ${e.getMessage}")
+          throw new RuntimeException(e.getMessage)
+      }
+
+  def getPayeTaxpayer(request: GetTaxpayerRequest)(implicit hc: HeaderCarrier): Future[GetPayeTaxpayerResponse] =
+    val url: URL = url"$rdsDatacachePath/paye/taxpayer"
+    http.post(url)
+      .withBody(Json.toJson(request))
+      .execute[GetPayeTaxpayerResponse]
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.error(s"[RdsDataCacheConnector][getPayeTaxpayer]: Upstream error - ${e.getMessage}")
+          throw e
+        case e: Throwable =>
+          logger.error(s"[RdsDataCacheConnector][getPayeTaxpayer]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
 }
