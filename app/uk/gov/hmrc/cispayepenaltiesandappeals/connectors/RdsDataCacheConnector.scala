@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.cispayepenaltiesandappeals.connectors
 
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, StringContextOps, UpstreamErrorResponse}
@@ -36,9 +36,12 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
   private val rdsDatacachePath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/pas"
   private val rdsDatacacheCisTaxpayerPath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/cis-taxpayer"
 
+  private val stubPath = config.baseUrl("cis-paye-penalties-and-appeals-stub") + "/cis-paye-penalties-and-appeals-stub"
+  val stubRdsDatacache: Boolean = config.getBoolean("features.stub-rds-datacache-enabled")
+
   // CIS
   def createCisAppeal(createCisAppealRequest: CreateCisAppealRequest)(implicit hc: HeaderCarrier): Future[CreateCisAppealResponse] =
-    val url: URL = url"$rdsDatacachePath/cis/appeal"
+    val url: URL = if(stubRdsDatacache) url"$stubPath/cis/appeal" else url"$rdsDatacachePath/cis/appeal"
     http.post(url)
       .withBody(Json.toJson(createCisAppealRequest))
       .execute[CreateCisAppealResponse]
@@ -52,7 +55,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getCisAppealablePenalties(request: GetAppealablePenaltiesRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltiesResponse] =
-    val url: URL = url"$rdsDatacachePath/cis/penalties"
+    val url: URL = if(stubRdsDatacache) url"$stubPath/cis/penalties" else url"$rdsDatacachePath/cis/penalties"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetAppealablePenaltiesResponse]
@@ -66,7 +69,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getCisAppealablePenalty(request: GetAppealablePenaltyRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltyResponse] =
-    val url: URL = url"$rdsDatacachePath/cis/penalty"
+    val url: URL = if(stubRdsDatacache) url"$stubPath/cis/penalty" else url"$rdsDatacachePath/cis/penalty"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetAppealablePenaltyResponse]
@@ -80,7 +83,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getCisTaxpayer(request: GetCisTaxpayerRequest)(implicit hc: HeaderCarrier): Future[GetCisTaxpayerResponse] =
-    val url: URL = url"$rdsDatacacheCisTaxpayerPath"
+    val url: URL = if(stubRdsDatacache) url"$stubPath/cis/taxpayer" else url"$rdsDatacacheCisTaxpayerPath"
     val proxyRequest = Json.obj(
       "taxOfficeNumber"    -> request.hmrcOfficeNumber,
       "taxOfficeReference" -> request.schemeReferenceNumber
