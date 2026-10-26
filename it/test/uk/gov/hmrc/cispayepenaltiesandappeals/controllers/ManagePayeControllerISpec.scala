@@ -19,11 +19,11 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 import uk.gov.hmrc.cispayepenaltiesandappeals.itUtil.ApplicationWithWiremock
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.http.Status
-import play.api.http.Status.{FORBIDDEN, OK}
+import play.api.http.Status.{CREATED, FORBIDDEN, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.BaseSpec
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{GetAppealablePenaltiesRequest, GetAppealablePenaltiesResponse, GetAppealablePenaltyResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 
 import java.time.LocalDate
 
@@ -32,6 +32,12 @@ class ManagePayeControllerISpec extends BaseSpec
 
   val servicePrefix = s"http://localhost:$port/cis-paye-penalties-and-appeals"
   lazy val getPayeAppealablePenaltiesUrl = s"$servicePrefix/paye/penalties"
+  lazy val getAppealablePenaltyUrl = s"$servicePrefix/paye/penalty"
+  lazy val createPayeAppealUrl = s"$servicePrefix/paye/appeal"
+
+  def stubCreatePayeAppealResponse(): Unit =
+    stubPost("/rds-datacache-proxy/pas/paye/appeal", Status.CREATED,
+      Json.toJson(CreateAppealResponse(created = true)).toString)
 
   def stubGetPayeAppealablePenaltiesResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/paye/penalties", Status.OK,
@@ -53,6 +59,17 @@ class ManagePayeControllerISpec extends BaseSpec
             penaltyAmount = Some(BigDecimal(928.23))
           )
         )
+      )).toString)
+  }
+
+  def stubGetAppealablePenaltyResponse(): Unit = {
+    stubPost("/rds-datacache-proxy/pas/paye/penalty", Status.OK,
+      Json.toJson(GetAppealablePenaltyResponse(
+        uniqueId = None,
+        issueDate = Some(LocalDate.of(2023, 1, 1)),
+        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+        penaltyType = Some("PAYE3"),
+        penaltyAmount = Some(BigDecimal(999.23))
       )).toString)
   }
 
@@ -84,6 +101,66 @@ class ManagePayeControllerISpec extends BaseSpec
         stubGetPayeAppealablePenaltiesResponse()
 
         val result = wsClient.url(getPayeAppealablePenaltiesUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
+      }
+    }
+
+    "call getPayeAppealablePenalty" when {
+
+      val testRequest = GetAppealablePenaltyRequest(
+        penaltyId = 1L,
+        hmrcOfficeNumber = "840123",
+        schemeReferenceNumber = "098345"
+      )
+
+      "return a 200:OK:: authorised request" in {
+        stubAuthorised()
+        stubGetAppealablePenaltyResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getAppealablePenaltyUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe OK
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubGetAppealablePenaltyResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(getAppealablePenaltyUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
+      }
+    }
+
+    "call createPayeAppeal" when {
+
+      val jsonBody = Json.toJson(CreateAppealRequest(penaltyId = 1L))
+
+      "return a 201:Created:: authorised request" in {
+        stubAuthorised()
+        stubCreatePayeAppealResponse()
+
+        val result = wsClient.url(createPayeAppealUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe CREATED
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubCreatePayeAppealResponse()
+
+        val result = wsClient.url(createPayeAppealUrl)
           .withHttpHeaders("Authorization" -> "Bearer123")
           .post(jsonBody)
 

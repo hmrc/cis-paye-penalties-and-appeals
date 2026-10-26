@@ -20,7 +20,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.SpecBase
 import uk.gov.hmrc.cispayepenaltiesandappeals.connectors.RdsDataCacheConnector
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.{CreateCisAppealRequest, CreateCisAppealResponse, GetAppealablePenaltiesRequest, GetAppealablePenaltiesResponse, GetAppealablePenaltyResponse}
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import java.time.LocalDate
@@ -142,4 +142,155 @@ final class PayeServiceSpec extends SpecBase {
     }
   }
 
+  "PayeService createPayeAppeal" - {
+
+    val testRequest = CreateAppealRequest(penaltyId = 1L)
+    val testResponse = CreateAppealResponse(created = true)
+
+    "must delegate to connector (happy path)" in {
+      val connector = mock[RdsDataCacheConnector]
+      val service = new PayeService(connector)
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(connector.createPayeAppeal(eqTo(testRequest))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(testResponse))
+
+      service.createPayeAppeal(testRequest).futureValue mustBe testResponse
+
+      verify(connector).createPayeAppeal(eqTo(testRequest))(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+
+    "must propagate failures from connector" in {
+      val connector = mock[RdsDataCacheConnector]
+      val service = new PayeService(connector)
+      val boom = UpstreamErrorResponse("Service unavailable", 503)
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(connector.createPayeAppeal(eqTo(testRequest))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(boom))
+
+      service.createPayeAppeal(testRequest).failed.futureValue mustBe boom
+
+      verify(connector).createPayeAppeal(eqTo(testRequest))(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+
+    "must propagate RuntimeException from connector" in {
+      val connector = mock[RdsDataCacheConnector]
+      val service = new PayeService(connector)
+      val boom = new RuntimeException("Connection failed")
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(connector.createPayeAppeal(eqTo(testRequest))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(boom))
+
+      service.createPayeAppeal(testRequest).failed.futureValue mustBe boom
+
+      verify(connector).createPayeAppeal(eqTo(testRequest))(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+  }
+
+  "getPayeAppealablePenalty" - {
+
+    def getPayeAppealablePenaltyRequest(penaltyId: Long = 1L) =
+      GetAppealablePenaltyRequest(
+        penaltyId = penaltyId,
+        hmrcOfficeNumber = "840123",
+        schemeReferenceNumber = "098345"
+      )
+
+    val getPayeAppealablePenaltyResponse = GetAppealablePenaltyResponse(
+      uniqueId = None,
+      issueDate = Some(LocalDate.of(2023, 1, 1)),
+      taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+      penaltyType = Some("PAYE3"),
+      penaltyAmount = Some(BigDecimal("999.23"))
+    )
+
+    "must delegate to connector (happy path)" in {
+      val connector = mock[RdsDataCacheConnector]
+      val service = new PayeService(connector)
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(connector.getPayeAppealablePenalty(eqTo(getPayeAppealablePenaltyRequest()))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(getPayeAppealablePenaltyResponse))
+
+      val result: GetAppealablePenaltyResponse = service.getPayeAppealablePenalty(getPayeAppealablePenaltyRequest()).futureValue
+      result mustBe getPayeAppealablePenaltyResponse
+
+      verify(connector).getPayeAppealablePenalty(eqTo(getPayeAppealablePenaltyRequest()))(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+
+    "must propagate failures from connector" in {
+      val connector = mock[RdsDataCacheConnector]
+      val service = new PayeService(connector)
+      val boom = UpstreamErrorResponse("Service unavailable", 503)
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(connector.getPayeAppealablePenalty(eqTo(getPayeAppealablePenaltyRequest()))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(boom))
+
+      val ex: Throwable = service.getPayeAppealablePenalty(getPayeAppealablePenaltyRequest()).failed.futureValue
+      ex mustBe boom
+
+      verify(connector).getPayeAppealablePenalty(eqTo(getPayeAppealablePenaltyRequest()))(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+
+    "must call connector exactly once per request" in {
+      val connector = mock[RdsDataCacheConnector]
+      val service = new PayeService(connector)
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(connector.getPayeAppealablePenalty(eqTo(getPayeAppealablePenaltyRequest()))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(getPayeAppealablePenaltyResponse))
+
+      service.getPayeAppealablePenalty(getPayeAppealablePenaltyRequest()).futureValue
+
+      verify(connector, times(1)).getPayeAppealablePenalty(eqTo(getPayeAppealablePenaltyRequest()))(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+
+    "must handle consecutive requests independently" in {
+      val connector = mock[RdsDataCacheConnector]
+      val service = new PayeService(connector)
+      val request1 = getPayeAppealablePenaltyRequest()
+      val request2 = getPayeAppealablePenaltyRequest(2L)
+      val request3 = getPayeAppealablePenaltyRequest(3L)
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(connector.getPayeAppealablePenalty(eqTo(request1))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(getPayeAppealablePenaltyResponse))
+      when(connector.getPayeAppealablePenalty(eqTo(request2))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(getPayeAppealablePenaltyResponse))
+      when(connector.getPayeAppealablePenalty(eqTo(request3))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(getPayeAppealablePenaltyResponse))
+
+      service.getPayeAppealablePenalty(request1).futureValue mustBe getPayeAppealablePenaltyResponse
+      service.getPayeAppealablePenalty(request2).futureValue mustBe getPayeAppealablePenaltyResponse
+      service.getPayeAppealablePenalty(request3).futureValue mustBe getPayeAppealablePenaltyResponse
+
+      verify(connector, times(3)).getPayeAppealablePenalty(any[GetAppealablePenaltyRequest])(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+
+    "must propagate RuntimeException from connector" in {
+      val connector = mock[RdsDataCacheConnector]
+      val service = new PayeService(connector)
+      val boom = new RuntimeException("Connection failed")
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(connector.getPayeAppealablePenalty(eqTo(getPayeAppealablePenaltyRequest()))(any[HeaderCarrier]))
+        .thenReturn(Future.failed(boom))
+
+      val ex: Throwable = service.getPayeAppealablePenalty(getPayeAppealablePenaltyRequest()).failed.futureValue
+      ex mustBe boom
+
+      verify(connector).getPayeAppealablePenalty(eqTo(getPayeAppealablePenaltyRequest()))(any[HeaderCarrier])
+      verifyNoMoreInteractions(connector)
+    }
+  }
 }
