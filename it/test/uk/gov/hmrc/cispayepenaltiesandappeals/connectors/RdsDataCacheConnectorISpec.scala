@@ -629,7 +629,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       "allowed" -> true
     )
 
-    "return GetAppealablePenaltiesResponse when BE returns OK with valid JSON" in {
+    "return GetAppealablePenaltiesResponse when RDS Datacache returns OK with valid JSON" in {
       val payloadJson = Json.toJson(payload)
 
       stubFor(
@@ -643,6 +643,27 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
 
       val result = connector.getCisPenaltyAllowed(payload).futureValue
+
+      result mustBe GetPenaltyAllowedResponse(
+        allowed = true
+      )
+    }
+
+    "return GetAppealablePenaltiesResponse when stub returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/cis/penalties/access-allowed"
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(appealablePenaltiesResponse.toString())
+          )
+      )
+
+      val result = connectorWithStub.getCisPenaltyAllowed(payload).futureValue
 
       result mustBe GetPenaltyAllowedResponse(
         allowed = true
@@ -1111,7 +1132,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       schemeReferenceNumber = "AB456"
     )
 
-    "return GetPayeTaxpayerResponse when BE returns OK with valid JSON" in {
+    "return GetPayeTaxpayerResponse when RDS Datacache returns OK with valid JSON" in {
       val payloadJson = Json.toJson(payload)
 
       stubFor(
@@ -1133,6 +1154,41 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
 
       val result = connector.getPayeTaxpayer(payload).futureValue
+
+      result mustBe GetPayeTaxpayerResponse(
+        uniqueId = 1000123L,
+        instanceId = 2000123L,
+        districtNumber = "123",
+        employerRef = "AB456",
+        employerName1 = Some("ABC"),
+        employerName2 = None,
+        agentOwnRef = None
+      )
+    }
+
+    "return GetPayeTaxpayerResponse when stub returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/paye/taxpayer"
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "uniqueId": 1000123,
+                   |  "instanceId": 2000123,
+                   |  "districtNumber": "123",
+                   |  "employerRef": "AB456",
+                   |  "employerName1": "ABC"
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connectorWithStub.getPayeTaxpayer(payload).futureValue
 
       result mustBe GetPayeTaxpayerResponse(
         uniqueId = 1000123L,
@@ -1229,7 +1285,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       "allowed" -> true
     )
 
-    "return GetAppealablePenaltiesResponse when BE returns OK with valid JSON" in {
+    "return GetAppealablePenaltiesResponse when RDS Datacache returns OK with valid JSON" in {
       val payloadJson = Json.toJson(payload)
 
       stubFor(
@@ -1243,6 +1299,27 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
 
       val result = connector.getPayePenaltyAllowed(payload).futureValue
+
+      result mustBe GetPenaltyAllowedResponse(
+        allowed = true
+      )
+    }
+
+    "return GetAppealablePenaltiesResponse when stub returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/paye/penalties/access-allowed"
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(appealablePenaltiesResponse.toString())
+          )
+      )
+
+      val result = connectorWithStub.getPayePenaltyAllowed(payload).futureValue
 
       result mustBe GetPenaltyAllowedResponse(
         allowed = true

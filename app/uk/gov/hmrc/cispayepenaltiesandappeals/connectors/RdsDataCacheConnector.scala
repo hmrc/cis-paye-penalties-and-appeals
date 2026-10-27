@@ -101,7 +101,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getCisPenaltyAllowed(request: GetPenaltyAllowedRequest)(implicit hc: HeaderCarrier): Future[GetPenaltyAllowedResponse] =
-    val url: URL = url"$rdsDatacachePath/cis/penalties/access-allowed"
+    val url: URL = if (stubRdsDatacache) url"$stubPath/cis/penalties/access-allowed" else url"$rdsDatacachePath/cis/penalties/access-allowed"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetPenaltyAllowedResponse]
@@ -158,7 +158,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getPayeTaxpayer(request: GetTaxpayerRequest)(implicit hc: HeaderCarrier): Future[GetPayeTaxpayerResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/taxpayer"
+    val url: URL = if(stubRdsDatacache) url"$stubPath/paye/taxpayer" else url"$rdsDatacachePath/paye/taxpayer"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetPayeTaxpayerResponse]
@@ -172,7 +172,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getPayePenaltyAllowed(request: GetPenaltyAllowedRequest)(implicit hc: HeaderCarrier): Future[GetPenaltyAllowedResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/penalties/access-allowed"
+    val url: URL = if (stubRdsDatacache) url"$stubPath/paye/penalties/access-allowed" else url"$rdsDatacachePath/paye/penalties/access-allowed"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetPenaltyAllowedResponse]
