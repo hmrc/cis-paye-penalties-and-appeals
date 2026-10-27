@@ -195,7 +195,7 @@ class ManageCisControllerSpec extends SpecBase {
 
     "POST /cis/taxpayer (getCisTaxpayer)" - {
 
-      val testRequest = GetCisTaxpayerRequest(
+      val testRequest = GetTaxpayerRequest(
         hmrcOfficeNumber = "123",
         schemeReferenceNumber = "AB456"
       )
@@ -246,7 +246,7 @@ class ManageCisControllerSpec extends SpecBase {
       }
 
       "return 500 Unexpected error on unknown exception" in new BaseSetup {
-        when(mockCisService.getCisTaxpayer(any[GetCisTaxpayerRequest])(any[HeaderCarrier]))
+        when(mockCisService.getCisTaxpayer(any[GetTaxpayerRequest])(any[HeaderCarrier]))
           .thenReturn(Future.failed(new RuntimeException("unexpected")))
 
         val result: Future[Result] = controller.getCisTaxpayer()(fakeRequest.withBody(Json.toJson(testRequest)))
@@ -256,7 +256,7 @@ class ManageCisControllerSpec extends SpecBase {
       }
 
       "return NOT_FOUND when the taxpayer does not exist" in new BaseSetup {
-        when(mockCisService.getCisTaxpayer(any[GetCisTaxpayerRequest])(any[HeaderCarrier]))
+        when(mockCisService.getCisTaxpayer(any[GetTaxpayerRequest])(any[HeaderCarrier]))
           .thenReturn(Future.failed(UpstreamErrorResponse("CIS taxpayer not found", NOT_FOUND)))
 
         val result: Future[Result] = controller.getCisTaxpayer()(fakeRequest.withBody(Json.toJson(testRequest)))
@@ -266,7 +266,7 @@ class ManageCisControllerSpec extends SpecBase {
       }
 
       "return 500 Unexpected error on other upstream errors" in new BaseSetup {
-        when(mockCisService.getCisTaxpayer(any[GetCisTaxpayerRequest])(any[HeaderCarrier]))
+        when(mockCisService.getCisTaxpayer(any[GetTaxpayerRequest])(any[HeaderCarrier]))
           .thenReturn(Future.failed(UpstreamErrorResponse("Service unavailable", SERVICE_UNAVAILABLE)))
 
         val result: Future[Result] = controller.getCisTaxpayer()(fakeRequest.withBody(Json.toJson(testRequest)))

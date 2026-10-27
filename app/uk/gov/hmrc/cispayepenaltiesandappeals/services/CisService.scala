@@ -38,7 +38,11 @@ class CisService @Inject()(rdsDataCacheConnector: RdsDataCacheConnector) {
                              (implicit hc: HeaderCarrier): Future[GetAppealablePenaltyResponse] =
     rdsDataCacheConnector.getCisAppealablePenalty(request)
 
-  def getCisTaxpayer(request: GetCisTaxpayerRequest)
+  def getCisTaxpayer(request: GetTaxpayerRequest)
                     (implicit hc: HeaderCarrier): Future[GetCisTaxpayerResponse] =
     rdsDataCacheConnector.getCisTaxpayer(request)
+
+  def getCisPenaltyAllowed(request: GetPenaltyAllowedRequest)
+                             (implicit hc: HeaderCarrier): Future[GetPenaltyAllowedResponse] =
+    rdsDataCacheConnector.getCisPenaltyAllowed(request)
 }

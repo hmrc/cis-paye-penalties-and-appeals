@@ -34,8 +34,15 @@ class PayeService @Inject()(rdsDataCacheConnector: RdsDataCacheConnector) {
                                 (implicit hc: HeaderCarrier): Future[GetAppealablePenaltiesResponse] =
     rdsDataCacheConnector.getPayeAppealablePenalties(request)
 
+  def getPayePenaltyAllowed(request: GetPenaltyAllowedRequest)
+                          (implicit hc: HeaderCarrier): Future[GetPenaltyAllowedResponse] =
+    rdsDataCacheConnector.getPayePenaltyAllowed(request)
+
   def getPayeAppealablePenalty(request: GetAppealablePenaltyRequest)
                              (implicit hc: HeaderCarrier): Future[GetAppealablePenaltyResponse] =
     rdsDataCacheConnector.getPayeAppealablePenalty(request)
-}
 
+  def getPayeTaxpayer(request: GetTaxpayerRequest)
+                     (implicit hc: HeaderCarrier): Future[GetPayeTaxpayerResponse] =
+    rdsDataCacheConnector.getPayeTaxpayer(request)
+}
