@@ -36,6 +36,7 @@ class ManagePayeControllerISpec extends BaseSpec
   lazy val createPayeAppealUrl = s"$servicePrefix/paye/appeal"
   lazy val getPayeTaxpayerUrl = s"$servicePrefix/paye/taxpayer"
   val getPayeTaxpayerProxyUrl = "/rds-datacache-proxy/pas/paye/taxpayer"
+  lazy val getPayePenaltiesAllowedUrl = s"$servicePrefix/paye/penalties/access-allowed"
 
   def stubCreatePayeAppealResponse(): Unit =
     stubPost("/rds-datacache-proxy/pas/paye/appeal", Status.CREATED,
@@ -86,6 +87,11 @@ class ManagePayeControllerISpec extends BaseSpec
         employerName2 = None,
         agentOwnRef = None
       )).toString)
+  }
+
+  def stubGetPenaltyAllowedResponse(): Unit = {
+    stubPost("/rds-datacache-proxy/pas/paye/penalties/access-allowed", Status.OK,
+      Json.toJson(GetPenaltyAllowedResponse(allowed = true)).toString)
   }
 
   "PayeController" should {
@@ -225,6 +231,38 @@ class ManagePayeControllerISpec extends BaseSpec
           .post(jsonBody)
 
         result.status shouldBe NOT_FOUND
+      }
+    }
+
+    "call getPayePenaltyAllowed" when {
+
+      val jsonBody = Json.toJson(
+        GetPenaltyAllowedRequest(
+          districtNumber = 1L,
+          employerReference = "hdz",
+          uniqueId = 1L
+        ))
+
+      "return a 200:Ok:: authorised request" in {
+        stubAuthorised()
+        stubGetPenaltyAllowedResponse()
+
+        val result = wsClient.url(getPayePenaltiesAllowedUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe OK
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubGetPenaltyAllowedResponse()
+
+        val result = wsClient.url(getPayePenaltiesAllowedUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
       }
     }
   }
