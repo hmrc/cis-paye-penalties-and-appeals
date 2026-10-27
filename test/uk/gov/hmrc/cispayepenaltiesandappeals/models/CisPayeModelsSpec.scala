@@ -602,4 +602,104 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
       result.isError mustBe true
     }
   }
+  "GetPenaltyAllowedRequest" should {
+
+    "serialize to JSON correctly" in {
+      val request = GetPenaltyAllowedRequest(
+        districtNumber = 1L,
+        employerReference = "hdz",
+        uniqueId = 1L
+      )
+
+      val json = Json.toJson(request)
+
+      (json \ "districtNumber").as[Long] mustBe 1
+      (json \ "employerReference").as[String] mustBe "hdz"
+      (json \ "uniqueId").as[Long] mustBe 1
+    }
+
+    "deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "districtNumber" -> 1L,
+        "employerReference" -> "hdz",
+        "uniqueId" -> 1L
+      )
+
+      val result = json.validate[GetPenaltyAllowedRequest]
+
+      result mustBe a[JsSuccess[_]]
+      val request = result.get
+
+      request.districtNumber mustBe 1L
+      request.employerReference mustBe "hdz"
+      request.uniqueId mustBe 1L
+    }
+
+    "fail to deserialize when data is missing" in {
+      val json = Json.obj(
+        "employerReference" -> "hdz"
+      )
+
+      val result = json.validate[GetPenaltyAllowedRequest]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when proxy field names are used" in {
+      val json = Json.obj(
+        "districtNumber" -> 123,
+        "employerReference" -> "1234",
+        "uniqueId" -> 123
+      )
+
+      val result = json.validate[GetPenaltyAllowedRequest]
+
+      result.isError mustBe false
+    }
+  }
+
+  "GetPenaltyAllowedResponse" should {
+
+    "serialize to JSON correctly" in {
+      val response = GetPenaltyAllowedResponse(
+        allowed = true
+      )
+
+      val json = Json.toJson(response)
+
+      (json \ "allowed").as[Boolean] mustBe true
+    }
+
+    "deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "allowed" -> true
+      )
+
+      val result = json.validate[GetPenaltyAllowedResponse]
+
+      result mustBe a[JsSuccess[_]]
+      result.get.allowed mustBe true
+    }
+
+    "fail to deserialize when type is incorrect" in {
+      val json = Json.obj(
+        "districtNumber" -> "123",
+        "employerReference" -> 1234,
+        "uniqueId" -> "123"
+      )
+
+      val result = json.validate[GetPenaltyAllowedResponse]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when a mandatory field is missing" in {
+      val json = Json.obj(
+      )
+
+      val result = json.validate[GetPenaltyAllowedResponse]
+
+      result.isError mustBe true
+    }
+  }
 }
