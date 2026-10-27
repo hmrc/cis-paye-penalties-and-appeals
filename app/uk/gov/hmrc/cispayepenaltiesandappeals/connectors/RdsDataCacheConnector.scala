@@ -102,7 +102,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
 
   // PAYE
   def createPayeAppeal(createAppealRequest: CreateAppealRequest)(implicit hc: HeaderCarrier): Future[CreateAppealResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/appeal"
+    val url: URL = if(stubRdsDatacache) url"$stubPath/paye/appeal" else url"$rdsDatacachePath/paye/appeal"
     http.post(url)
       .withBody(Json.toJson(createAppealRequest))
       .execute[CreateAppealResponse]
@@ -116,7 +116,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getPayeAppealablePenalties(request: GetAppealablePenaltiesRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltiesResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/penalties"
+    val url: URL = if(stubRdsDatacache) url"$stubPath/paye/penalties" else url"$rdsDatacachePath/paye/penalties"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetAppealablePenaltiesResponse]
@@ -130,7 +130,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getPayeAppealablePenalty(request: GetAppealablePenaltyRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltyResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/penalty"
+    val url: URL = if(stubRdsDatacache) url"$stubPath/paye/penalty" else url"$rdsDatacachePath/paye/penalty"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetAppealablePenaltyResponse]

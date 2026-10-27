@@ -617,6 +617,113 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
   }
 
   // PAYE
+  "createPayeAppeal" should {
+
+    val url = "/rds-datacache-proxy/pas/paye/appeal"
+
+    val payload = CreateAppealRequest(penaltyId = 1)
+
+    "return CreateAppealResponse when RDS Datacache returns OK with valid JSON" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "created": true
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connector.createPayeAppeal(payload).futureValue
+
+      result mustBe CreateAppealResponse(created = true)
+    }
+
+    "return CreateAppealResponse when stub returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/paye/appeal"
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "created": true
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connectorWithStub.createPayeAppeal(payload).futureValue
+
+      result mustBe CreateAppealResponse(created = true)
+    }
+
+    "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.createPayeAppeal(payload).futureValue
+      }
+      ex.getMessage must include("500")
+    }
+
+    "propagate an upstream error when BE returns BAD_REQUEST" in {
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Invalid request"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.createPayeAppeal(payload).futureValue
+      }
+      ex.getMessage must include("400")
+    }
+
+    "propagate Exception when BE throws unexpected JSResult" in {
+      val payloadJson = Json.toJson(payload)
+      val connector = app.injector.instanceOf[RdsDataCacheConnector]
+
+      stubFor(
+        post(urlPathEqualTo(url))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "created": "ANY_VALUE"
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.createPayeAppeal(payload).futureValue
+      }
+
+      ex mustBe a[RuntimeException]
+    }
+  }
+
   "getPayeAppealablePenalties" should {
 
     val url = "/rds-datacache-proxy/pas/paye/penalties"
@@ -648,7 +755,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
     )
 
-    "return GetAppealablePenaltiesResponse when BE returns OK with valid JSON" in {
+    "return GetAppealablePenaltiesResponse when RDS Datacache returns OK with valid JSON" in {
       val payloadJson = Json.toJson(payload)
 
       stubFor(
@@ -662,6 +769,43 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
 
       val result = connector.getPayeAppealablePenalties(payload).futureValue
+
+      result mustBe GetAppealablePenaltiesResponse(
+        total = 2,
+        appealablePenalties = List(
+          GetAppealablePenaltyResponse(
+            uniqueId = Some(10001),
+            issueDate = Some(LocalDate.of(2023, 1, 1)),
+            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+            penaltyType = Some("PAYE3"),
+            penaltyAmount = Some(BigDecimal(999.23))
+          ),
+          GetAppealablePenaltyResponse(
+            uniqueId = Some(10002),
+            issueDate = Some(LocalDate.of(2026, 2, 20)),
+            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
+            penaltyType = Some("PAYE5"),
+            penaltyAmount = Some(BigDecimal(928.23))
+          )
+        )
+      )
+    }
+
+    "return GetAppealablePenaltiesResponse when stub returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/paye/penalties"
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(penaltiesReturnJson.toString())
+          )
+      )
+
+      val result = connectorWithStub.getPayeAppealablePenalties(payload).futureValue
 
       result mustBe GetAppealablePenaltiesResponse(
         total = 2,
@@ -740,90 +884,6 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
     }
   }
 
-  "createPayeAppeal" should {
-
-    val url = "/rds-datacache-proxy/pas/paye/appeal"
-
-    val payload = CreateAppealRequest(penaltyId = 1)
-
-    "return CreateAppealResponse when BE returns OK with valid JSON" in {
-      val payloadJson = Json.toJson(payload)
-
-      stubFor(
-        post(urlPathEqualTo(url))
-          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
-          .willReturn(
-            aResponse()
-              .withStatus(OK)
-              .withBody(
-                s"""{
-                   |  "created": true
-                   |}""".stripMargin
-              )
-          )
-      )
-
-      val result = connector.createPayeAppeal(payload).futureValue
-
-      result mustBe CreateAppealResponse(created = true)
-    }
-
-    "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
-      val payloadJson = Json.toJson(payload)
-
-      stubFor(
-        post(urlPathEqualTo(url))
-          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
-          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
-      )
-
-      val ex = intercept[Exception] {
-        connector.createPayeAppeal(payload).futureValue
-      }
-      ex.getMessage must include("500")
-    }
-
-    "propagate an upstream error when BE returns BAD_REQUEST" in {
-      val payloadJson = Json.toJson(payload)
-
-      stubFor(
-        post(urlPathEqualTo(url))
-          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
-          .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Invalid request"))
-      )
-
-      val ex = intercept[Exception] {
-        connector.createPayeAppeal(payload).futureValue
-      }
-      ex.getMessage must include("400")
-    }
-
-    "propagate Exception when BE throws unexpected JSResult" in {
-      val payloadJson = Json.toJson(payload)
-      val connector = app.injector.instanceOf[RdsDataCacheConnector]
-
-      stubFor(
-        post(urlPathEqualTo(url))
-          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
-          .willReturn(
-            aResponse()
-              .withStatus(OK)
-              .withBody(
-                s"""{
-                   |  "created": "ANY_VALUE"
-                   |}""".stripMargin
-              )
-          )
-      )
-
-      val ex = intercept[Exception] {
-        connector.createPayeAppeal(payload).futureValue
-      }
-
-      ex mustBe a[RuntimeException]
-    }
-  }
-
   "getPayeAppealablePenalty" should {
 
     val url = "/rds-datacache-proxy/pas/paye/penalty"
@@ -834,7 +894,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       schemeReferenceNumber = "098345"
     )
 
-    "return GetAppealablePenaltyResponse when BE returns OK with valid JSON" in {
+    "return GetAppealablePenaltyResponse when RDS Datacache returns OK with valid JSON" in {
       val payloadJson = Json.toJson(payload)
 
       stubFor(
@@ -855,6 +915,38 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       )
 
       val result = connector.getPayeAppealablePenalty(payload).futureValue
+
+      result mustBe GetAppealablePenaltyResponse(
+        uniqueId = None,
+        issueDate = Some(LocalDate.of(2023, 1, 1)),
+        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
+        penaltyType = Some("PAYE3"),
+        penaltyAmount = Some(BigDecimal("999.23"))
+      )
+    }
+
+    "return GetAppealablePenaltyResponse when stub returns OK with valid JSON" in {
+      val stubUrl = "/cis-paye-penalties-and-appeals-stub/paye/penalty"
+      val payloadJson = Json.toJson(payload)
+
+      stubFor(
+        post(urlPathEqualTo(stubUrl))
+          .withRequestBody(equalToJson(Json.stringify(payloadJson), true, true))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "issueDate": "2023-01-01",
+                   |  "taxPeriodEndDate": "2023-04-01",
+                   |  "penaltyType": "PAYE3",
+                   |  "penaltyAmount": 999.23
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val result = connectorWithStub.getPayeAppealablePenalty(payload).futureValue
 
       result mustBe GetAppealablePenaltyResponse(
         uniqueId = None,
