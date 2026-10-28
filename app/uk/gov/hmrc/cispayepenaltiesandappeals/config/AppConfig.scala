@@ -23,3 +23,5 @@ import play.api.Configuration
 class AppConfig @Inject()(config: Configuration):
 
   val appName: String = config.get[String]("appName")
+  
+  val gracePeriod: Int = config.get[Int]("client-list.gracePeriodSeconds")
