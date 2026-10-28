@@ -702,4 +702,72 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
       result.isError mustBe true
     }
   }
+
+  "ClientListStatusRequest" should {
+
+    "serialize to JSON correctly" in {
+      val request = ClientListStatusRequest(
+        credentialId = "123",
+        serviceId = "CIS"
+      )
+
+      val json = Json.toJson(request)
+
+      (json \ "credentialId").as[String] mustBe "123"
+      (json \ "serviceId").as[String] mustBe "CIS"
+    }
+
+    "deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "credentialId" -> "123",
+        "serviceId" -> "CIS"
+      )
+
+      val result = json.validate[ClientListStatusRequest]
+
+      result mustBe a[JsSuccess[_]]
+      val request = result.get
+
+      request.credentialId mustBe "123"
+      request.serviceId mustBe "CIS"
+    }
+
+    "fail to deserialize when data is missing" in {
+      val json = Json.obj(
+        "serviceId" -> "CIS"
+      )
+
+      val result = json.validate[ClientListStatusRequest]
+
+      result.isError mustBe true
+    }
+  }
+
+  "ClientListStatusResponse" should {
+
+    "serialize to JSON correctly" in {
+      val response = ClientListStatusResponse(status = "Succeeded")
+
+      val json = Json.toJson(response)
+
+      (json \ "status").as[String] mustBe "Succeeded"
+    }
+
+    "deserialize from JSON correctly" in {
+      val json = Json.obj("status" -> "Succeeded")
+
+      val result = json.validate[ClientListStatusResponse]
+
+      result mustBe a[JsSuccess[_]]
+      result.get.status mustBe "Succeeded"
+    }
+
+    "fail to deserialize when data is missing" in {
+      val json = Json.obj()
+
+      val result = json.validate[ClientListStatusResponse]
+
+      result.isError mustBe true
+    }
+  }
 }

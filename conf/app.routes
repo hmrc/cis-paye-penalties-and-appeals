@@ -13,3 +13,6 @@ POST        /paye/penalties                                             uk.gov.h
 POST        /paye/penalty                                               uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayeAppealablePenalty()
 POST        /paye/taxpayer                                              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayeTaxpayer()
 POST        /paye/penalties/access-allowed                              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayePenaltyAllowed()
+
+# CIS and PAYE shared routes
+POST        /agent/clientlist/status                                    uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.getClientListDownloadStatus()

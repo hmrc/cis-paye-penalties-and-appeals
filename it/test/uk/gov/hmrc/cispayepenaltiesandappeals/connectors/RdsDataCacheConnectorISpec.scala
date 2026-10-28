@@ -1071,4 +1071,84 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
     }
   }
 
+  // CIS and PAYE shared
+
+  "getClientListDownloadStatus" should {
+
+    def url(credentialId: String, serviceName: String, gracePeriodSeconds: Int) =
+      s"/rds-datacache-proxy/cis/client-list-status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
+
+    val clientListStatusResponse = Json.obj(
+      "status" -> "Succeeded"
+    )
+
+    val credentialId = "123"
+    val serviceName = "CIS"
+    val gracePeriodSeconds = 14400
+
+    "return ClientListStatusResponse when BE returns OK with valid JSON" in {
+      stubFor(
+        get(urlEqualTo(url(credentialId, serviceName, gracePeriodSeconds)))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(clientListStatusResponse.toString())
+          )
+      )
+
+      val result = connector.getClientListDownloadStatus(credentialId, serviceName, gracePeriodSeconds).futureValue
+
+      result mustBe ClientListStatusResponse(
+        status = "Succeeded"
+      )
+    }
+
+    "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
+      stubFor(
+        get(urlEqualTo(url(credentialId, serviceName, gracePeriodSeconds)))
+          .willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR).withBody("boom"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getClientListDownloadStatus(credentialId, serviceName, gracePeriodSeconds).futureValue
+      }
+      ex.getMessage must include("500")
+    }
+
+    "propagate an upstream error when BE returns BAD_REQUEST" in {
+      stubFor(
+        get(urlEqualTo(url(credentialId, serviceName, gracePeriodSeconds)))
+          .willReturn(aResponse().withStatus(BAD_REQUEST).withBody("Invalid request"))
+      )
+
+      val ex = intercept[Exception] {
+        connector.getClientListDownloadStatus(credentialId, serviceName, gracePeriodSeconds).futureValue
+      }
+      ex.getMessage must include("400")
+    }
+
+    "propagate Exception when BE throws unexpected JSResult" in {
+      val connector = app.injector.instanceOf[RdsDataCacheConnector]
+
+      stubFor(
+        get(urlEqualTo(url(credentialId, serviceName, gracePeriodSeconds)))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withBody(
+                s"""{
+                   |  "invalid": "data"
+                   |}""".stripMargin
+              )
+          )
+      )
+
+      val ex = intercept[Exception] {
+        connector.getClientListDownloadStatus(credentialId, serviceName, gracePeriodSeconds).futureValue
+      }
+
+      ex mustBe a[RuntimeException]
+    }
+  }
+
 }
