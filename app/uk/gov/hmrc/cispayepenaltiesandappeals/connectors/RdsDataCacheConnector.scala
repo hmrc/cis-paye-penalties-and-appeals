@@ -33,12 +33,14 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
                                       config: ServicesConfig)
                                      (implicit ec: ExecutionContext) extends Logging {
 
-  private val rdsDatacachePath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/pas"
-  private val rdsDatacacheCisTaxpayerPath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/cis-taxpayer"
+  private val rdsDatacacheBasePath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy"
+  private val rdsDatacachePasPath = s"$rdsDatacacheBasePath/pas"
+  private val rdsDatacacheCisTaxpayerPath = s"$rdsDatacacheBasePath/cis-taxpayer"
+  private val rdsDatacacheCisPath = s"$rdsDatacacheBasePath/cis"
 
   // CIS
   def createCisAppeal(createCisAppealRequest: CreateAppealRequest)(implicit hc: HeaderCarrier): Future[CreateAppealResponse] =
-    val url: URL = url"$rdsDatacachePath/cis/appeal"
+    val url: URL = url"$rdsDatacachePasPath/cis/appeal"
     http.post(url)
       .withBody(Json.toJson(createCisAppealRequest))
       .execute[CreateAppealResponse]
@@ -52,7 +54,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getCisAppealablePenalties(request: GetAppealablePenaltiesRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltiesResponse] =
-    val url: URL = url"$rdsDatacachePath/cis/penalties"
+    val url: URL = url"$rdsDatacachePasPath/cis/penalties"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetAppealablePenaltiesResponse]
@@ -66,7 +68,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getCisAppealablePenalty(request: GetAppealablePenaltyRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltyResponse] =
-    val url: URL = url"$rdsDatacachePath/cis/penalty"
+    val url: URL = url"$rdsDatacachePasPath/cis/penalty"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetAppealablePenaltyResponse]
@@ -98,7 +100,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getCisPenaltyAllowed(request: GetPenaltyAllowedRequest)(implicit hc: HeaderCarrier): Future[GetPenaltyAllowedResponse] =
-    val url: URL = url"$rdsDatacachePath/cis/penalties/access-allowed"
+    val url: URL = url"$rdsDatacachePasPath/cis/penalties/access-allowed"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetPenaltyAllowedResponse]
@@ -113,7 +115,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
 
   // PAYE
   def createPayeAppeal(createAppealRequest: CreateAppealRequest)(implicit hc: HeaderCarrier): Future[CreateAppealResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/appeal"
+    val url: URL = url"$rdsDatacachePasPath/paye/appeal"
     http.post(url)
       .withBody(Json.toJson(createAppealRequest))
       .execute[CreateAppealResponse]
@@ -127,7 +129,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getPayeAppealablePenalties(request: GetAppealablePenaltiesRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltiesResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/penalties"
+    val url: URL = url"$rdsDatacachePasPath/paye/penalties"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetAppealablePenaltiesResponse]
@@ -141,7 +143,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getPayeAppealablePenalty(request: GetAppealablePenaltyRequest)(implicit hc: HeaderCarrier): Future[GetAppealablePenaltyResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/penalty"
+    val url: URL = url"$rdsDatacachePasPath/paye/penalty"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetAppealablePenaltyResponse]
@@ -155,7 +157,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getPayeTaxpayer(request: GetTaxpayerRequest)(implicit hc: HeaderCarrier): Future[GetPayeTaxpayerResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/taxpayer"
+    val url: URL = url"$rdsDatacachePasPath/paye/taxpayer"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetPayeTaxpayerResponse]
@@ -169,7 +171,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def getPayePenaltyAllowed(request: GetPenaltyAllowedRequest)(implicit hc: HeaderCarrier): Future[GetPenaltyAllowedResponse] =
-    val url: URL = url"$rdsDatacachePath/paye/penalties/access-allowed"
+    val url: URL = url"$rdsDatacachePasPath/paye/penalties/access-allowed"
     http.post(url)
       .withBody(Json.toJson(request))
       .execute[GetPenaltyAllowedResponse]
@@ -179,6 +181,20 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           throw e
         case e: Throwable =>
           logger.error(s"[RdsDataCacheConnector][getPayePenaltyAllowed]: ${e.getMessage}")
+          throw new RuntimeException(e.getMessage)
+      }
+
+  // CIS and PAYE shared
+  def getClientListDownloadStatus(credentialId: String, serviceName: String, gracePeriodSeconds: Int)(implicit hc: HeaderCarrier): Future[ClientListStatusResponse] =
+    val url: URL = url"$rdsDatacacheCisPath/client-list-status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
+    http.get(url)
+      .execute[ClientListStatusResponse]
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.error(s"[RdsDataCacheConnector][getClientListDownloadStatus]: Upstream error - ${e.getMessage}")
+          throw e
+        case e: Throwable =>
+          logger.error(s"[RdsDataCacheConnector][getClientListDownloadStatus]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
 }

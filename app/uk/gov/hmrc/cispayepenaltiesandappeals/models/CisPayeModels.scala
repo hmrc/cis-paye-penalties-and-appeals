@@ -142,3 +142,14 @@ object GetPenaltyAllowedResponse {
   implicit val format: OFormat[GetPenaltyAllowedResponse] = Json.format[GetPenaltyAllowedResponse]
 }
 
+case class ClientListStatusRequest(credentialId: String, serviceId: String)
+
+object ClientListStatusRequest {
+  implicit val format: OFormat[ClientListStatusRequest] = Json.format[ClientListStatusRequest]
+}
+
+case class ClientListStatusResponse(status: String)
+
+object ClientListStatusResponse {
+  implicit val format: OFormat[ClientListStatusResponse] = Json.format[ClientListStatusResponse]
+}
