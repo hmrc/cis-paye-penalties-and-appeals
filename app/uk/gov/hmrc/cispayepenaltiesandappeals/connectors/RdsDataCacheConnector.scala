@@ -35,6 +35,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
 
   private val rdsDatacachePath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/pas"
   private val rdsDatacacheCisTaxpayerPath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/cis-taxpayer"
+  private val rdsDatacacheCisPath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy/cis"
 
   // CIS
   def createCisAppeal(createCisAppealRequest: CreateAppealRequest)(implicit hc: HeaderCarrier): Future[CreateAppealResponse] =
@@ -108,6 +109,23 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           throw e
         case e: Throwable =>
           logger.error(s"[RdsDataCacheConnector][getCisPenaltyAllowed]: ${e.getMessage}")
+          throw new RuntimeException(e.getMessage)
+      }
+
+  def hasCisClient(request: HasCisClientRequest)(implicit hc: HeaderCarrier): Future[HasClientResponse] =
+    val irAgentId          = request.agentDetails.irAgentId
+    val credentialId       = request.agentDetails.credentialId
+    val taxOfficeNumber    = request.contractorDetails.hmrcOfficeNumber
+    val taxOfficeReference = request.contractorDetails.schemeReferenceNumber
+    val url: URL = url"$rdsDatacacheCisPath/has-client?irAgentId=$irAgentId&credentialId=$credentialId&taxOfficeNumber=$taxOfficeNumber&taxOfficeReference=$taxOfficeReference"
+    http.get(url)
+      .execute[HasClientResponse]
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.error(s"[RdsDataCacheConnector][hasCisClient]: Upstream error - ${e.getMessage}")
+          throw e
+        case e: Throwable =>
+          logger.error(s"[RdsDataCacheConnector][hasCisClient]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
 

@@ -45,4 +45,8 @@ class CisService @Inject()(rdsDataCacheConnector: RdsDataCacheConnector) {
   def getCisPenaltyAllowed(request: GetPenaltyAllowedRequest)
                              (implicit hc: HeaderCarrier): Future[GetPenaltyAllowedResponse] =
     rdsDataCacheConnector.getCisPenaltyAllowed(request)
+
+  def hasCisClient(request: HasCisClientRequest)
+                  (implicit hc: HeaderCarrier): Future[HasClientResponse] =
+    rdsDataCacheConnector.hasCisClient(request)
 }

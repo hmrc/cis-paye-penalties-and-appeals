@@ -545,5 +545,118 @@ final class CisServiceSpec extends SpecBase {
         verifyNoMoreInteractions(connector)
       }
     }
+
+    "hasCisClient" - {
+
+      def hasCisClientRequest(schemeReferenceNumber: String = "EZ00100") =
+        HasCisClientRequest(
+          agentDetails = AgentDetails(credentialId = "CRED01", irAgentId = "123456"),
+          contractorDetails = ContractorDetails(hmrcOfficeNumber = "754", schemeReferenceNumber = schemeReferenceNumber)
+        )
+
+      val hasClientResponse = HasClientResponse(
+        hasClient = true
+      )
+
+      "must delegate to connector (happy path)" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        val result: HasClientResponse = service.hasCisClient(hasCisClientRequest()).futureValue
+        result mustBe hasClientResponse
+
+        verify(connector).hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must return hasClient false when connector returns false" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val notClientResponse = HasClientResponse(hasClient = false)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(notClientResponse))
+
+        val result: HasClientResponse = service.hasCisClient(hasCisClientRequest()).futureValue
+        result mustBe notClientResponse
+
+        verify(connector).hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate failures from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val boom = UpstreamErrorResponse("Service unavailable", 503)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.hasCisClient(hasCisClientRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must call connector exactly once per request" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        service.hasCisClient(hasCisClientRequest()).futureValue
+
+        verify(connector, times(1)).hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must handle consecutive requests independently" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val request1 = hasCisClientRequest()
+        val request2 = hasCisClientRequest("EZ00125")
+        val request3 = hasCisClientRequest("EZ00150")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasCisClient(eqTo(request1))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+        when(connector.hasCisClient(eqTo(request2))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+        when(connector.hasCisClient(eqTo(request3))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        service.hasCisClient(request1).futureValue mustBe hasClientResponse
+        service.hasCisClient(request2).futureValue mustBe hasClientResponse
+        service.hasCisClient(request3).futureValue mustBe hasClientResponse
+
+        verify(connector, times(3)).hasCisClient(any[HasCisClientRequest])(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate RuntimeException from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val service = new CisService(connector)
+        val boom = new RuntimeException("Connection failed")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.hasCisClient(hasCisClientRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).hasCisClient(eqTo(hasCisClientRequest()))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+    }
   }
 }

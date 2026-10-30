@@ -19,7 +19,7 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 import uk.gov.hmrc.cispayepenaltiesandappeals.itUtil.ApplicationWithWiremock
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.http.Status
-import play.api.http.Status.{CREATED, FORBIDDEN, NOT_FOUND, OK}
+import play.api.http.Status.{BAD_REQUEST, CREATED, FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.BaseSpec
@@ -36,7 +36,9 @@ class ManageCisControllerISpec extends BaseSpec
   lazy val getAppealablePenaltyUrl = s"$servicePrefix/cis/penalty"
   lazy val getCisTaxpayerUrl = s"$servicePrefix/cis/taxpayer"
   lazy val getCisPenaltiesAllowedUrl = s"$servicePrefix/cis/penalties/access-allowed"
+  lazy val hasCisClientUrl = s"$servicePrefix/cis/agent/clientlist/has-client"
   val getCisTaxpayerProxyUrl = "/rds-datacache-proxy/cis-taxpayer"
+  val hasCisClientProxyUrl = "/rds-datacache-proxy/cis/has-client?irAgentId=123456&credentialId=CRED01&taxOfficeNumber=754&taxOfficeReference=EZ00100"
 
   def stubCreateAppealResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/cis/appeal", Status.CREATED,
@@ -102,6 +104,11 @@ class ManageCisControllerISpec extends BaseSpec
   def stubGetPenaltyAllowedResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/cis/penalties/access-allowed", Status.OK,
       Json.toJson(GetPenaltyAllowedResponse(allowed = true)).toString)
+  }
+
+  def stubHasCisClientResponse(): Unit = {
+    stubGet(hasCisClientProxyUrl, Status.OK,
+      Json.toJson(HasClientResponse(hasClient = true)).toString)
   }
 
   "ManageCisController" should {
@@ -286,6 +293,63 @@ class ManageCisControllerISpec extends BaseSpec
           .post(jsonBody)
 
         result.status shouldBe FORBIDDEN
+      }
+    }
+
+    "call hasCisClient" when {
+
+      val testRequest = HasCisClientRequest(
+        agentDetails = AgentDetails(credentialId = "CRED01", irAgentId = "123456"),
+        contractorDetails = ContractorDetails(hmrcOfficeNumber = "754", schemeReferenceNumber = "EZ00100")
+      )
+
+      "return a 200:OK:: authorised request" in {
+        stubAuthorised()
+        stubHasCisClientResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(hasCisClientUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe OK
+        result.json shouldBe Json.toJson(HasClientResponse(hasClient = true))
+      }
+
+      "return a 400:BadRequest:: authorised request with invalid payload" in {
+        stubAuthorised()
+        stubHasCisClientResponse()
+        val jsonBody = Json.obj("invalid" -> "data")
+
+        val result = wsClient.url(hasCisClientUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe BAD_REQUEST
+      }
+
+      "return a 403:Forbidden:: unauthorised request" in {
+        stubUnauthorised()
+        stubHasCisClientResponse()
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(hasCisClientUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
+      }
+
+      "return a 500:InternalServerError:: authorised request when proxy fails" in {
+        stubAuthorised()
+        stubGet(hasCisClientProxyUrl, Status.INTERNAL_SERVER_ERROR, "boom")
+        val jsonBody = Json.toJson(testRequest)
+
+        val result = wsClient.url(hasCisClientUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe INTERNAL_SERVER_ERROR
       }
     }
   }

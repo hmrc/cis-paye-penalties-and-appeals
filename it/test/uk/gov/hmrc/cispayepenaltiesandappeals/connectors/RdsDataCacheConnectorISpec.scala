@@ -563,6 +563,75 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
     }
   }
 
+  "hasCisClient" should {
+
+    val url = "/rds-datacache-proxy/cis/has-client"
+
+    val payload = HasCisClientRequest(
+      agentDetails = AgentDetails(credentialId = "CRED01", irAgentId = "123456"),
+      contractorDetails = ContractorDetails(hmrcOfficeNumber = "754", schemeReferenceNumber = "EZ00100")
+    )
+
+    def stubHasClient(status: Int, body: String): Unit =
+      stubFor(
+        get(urlPathEqualTo(url))
+          .withQueryParam("irAgentId", equalTo("123456"))
+          .withQueryParam("credentialId", equalTo("CRED01"))
+          .withQueryParam("taxOfficeNumber", equalTo("754"))
+          .withQueryParam("taxOfficeReference", equalTo("EZ00100"))
+          .willReturn(aResponse().withStatus(status).withBody(body))
+      )
+
+    "return HasClientResponse true when BE returns OK with hasClient true" in {
+      stubHasClient(OK, Json.obj("hasClient" -> true).toString())
+
+      val result = connector.hasCisClient(payload).futureValue
+
+      result mustBe HasClientResponse(hasClient = true)
+    }
+
+    "return HasClientResponse false when BE returns OK with hasClient false" in {
+      stubHasClient(OK, Json.obj("hasClient" -> false).toString())
+
+      val result = connector.hasCisClient(payload).futureValue
+
+      result mustBe HasClientResponse(hasClient = false)
+    }
+
+    "propagate an upstream error when BE returns INTERNAL_SERVER_ERROR" in {
+      stubHasClient(INTERNAL_SERVER_ERROR, "boom")
+
+      val ex = intercept[Exception] {
+        connector.hasCisClient(payload).futureValue
+      }
+      ex.getMessage must include("500")
+    }
+
+    "propagate an upstream error when BE returns BAD_REQUEST" in {
+      stubHasClient(BAD_REQUEST, "Invalid request")
+
+      val ex = intercept[Exception] {
+        connector.hasCisClient(payload).futureValue
+      }
+      ex.getMessage must include("400")
+    }
+
+    "propagate Exception when BE throws unexpected JSResult" in {
+      stubHasClient(
+        OK,
+        s"""{
+           |  "uniqueId": "ANY_VALUE"
+           |}""".stripMargin
+      )
+
+      val ex = intercept[Exception] {
+        connector.hasCisClient(payload).futureValue
+      }
+
+      ex mustBe a[RuntimeException]
+    }
+  }
+
   // PAYE
   "getPayeAppealablePenalties" should {
 
