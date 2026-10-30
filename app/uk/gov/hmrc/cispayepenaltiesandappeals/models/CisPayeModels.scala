@@ -142,3 +142,38 @@ object GetPenaltyAllowedResponse {
   implicit val format: OFormat[GetPenaltyAllowedResponse] = Json.format[GetPenaltyAllowedResponse]
 }
 
+case class AgentDetails(
+                         credentialId: String,
+                         irAgentId: String
+                       )
+
+object AgentDetails {
+  implicit val format: OFormat[AgentDetails] = Json.format[AgentDetails]
+}
+
+case class ContractorDetails(
+                              hmrcOfficeNumber: String,
+                              schemeReferenceNumber: String
+                            )
+
+object ContractorDetails {
+  implicit val format: OFormat[ContractorDetails] = Json.format[ContractorDetails]
+}
+
+case class HasCisClientRequest(
+                                agentDetails: AgentDetails,
+                                contractorDetails: ContractorDetails
+                              )
+
+object HasCisClientRequest {
+  implicit val format: OFormat[HasCisClientRequest] = Json.format[HasCisClientRequest]
+}
+
+case class HasClientResponse(
+                              hasClient: Boolean
+                            )
+
+object HasClientResponse {
+  implicit val format: OFormat[HasClientResponse] = Json.format[HasClientResponse]
+}
+

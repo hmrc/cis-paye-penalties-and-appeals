@@ -275,6 +275,72 @@ class ManageCisControllerSpec extends SpecBase {
         (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
       }
     }
+
+    "POST /cis/agent/clientlist/has-client (hasCisClient)" - {
+
+      val testRequest = HasCisClientRequest(
+        agentDetails = AgentDetails(credentialId = "CRED01", irAgentId = "123456"),
+        contractorDetails = ContractorDetails(hmrcOfficeNumber = "754", schemeReferenceNumber = "EZ00100")
+      )
+
+      "return OK with hasClient true when service returns true" in new BaseSetup {
+        val testResponse = HasClientResponse(hasClient = true)
+        when(mockCisService.hasCisClient(eqTo(testRequest))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+
+        val result: Future[Result] = controller.hasCisClient()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(testResponse)
+        verify(mockCisService).hasCisClient(eqTo(testRequest))(any[HeaderCarrier])
+      }
+
+      "return OK with hasClient false when service returns false" in new BaseSetup {
+        val testResponse = HasClientResponse(hasClient = false)
+        when(mockCisService.hasCisClient(eqTo(testRequest))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(testResponse))
+
+        val result: Future[Result] = controller.hasCisClient()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.toJson(testResponse)
+      }
+
+      "return BAD_REQUEST with message when given an invalid json body" in new BaseSetup {
+        val result: Future[Result] = controller.hasCisClient()(fakeRequest.withBody(Json.obj("invalid" -> "data")))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+        (contentAsJson(result) \ "errors").isDefined mustBe true
+      }
+
+      "return BAD_REQUEST when required fields are missing" in new BaseSetup {
+        val result: Future[Result] = controller.hasCisClient()(fakeRequest.withBody(Json.obj()))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+      }
+
+      "return 500 Unexpected error on unknown exception" in new BaseSetup {
+        when(mockCisService.hasCisClient(any[HasCisClientRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("unexpected")))
+
+        val result: Future[Result] = controller.hasCisClient()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
+      }
+
+      "return 500 Unexpected error on upstream errors" in new BaseSetup {
+        when(mockCisService.hasCisClient(any[HasCisClientRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(UpstreamErrorResponse("Service unavailable", SERVICE_UNAVAILABLE)))
+
+        val result: Future[Result] = controller.hasCisClient()(fakeRequest.withBody(Json.toJson(testRequest)))
+
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
+      }
+    }
   }
 
   private trait BaseSetup {

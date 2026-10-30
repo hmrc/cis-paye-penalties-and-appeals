@@ -702,4 +702,156 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
       result.isError mustBe true
     }
   }
+
+  "HasCisClientRequest" should {
+
+    "serialize to JSON correctly" in {
+      val request = HasCisClientRequest(
+        agentDetails = AgentDetails(credentialId = "CRED01", irAgentId = "123456"),
+        contractorDetails = ContractorDetails(hmrcOfficeNumber = "754", schemeReferenceNumber = "EZ00100")
+      )
+
+      val json = Json.toJson(request)
+
+      (json \ "agentDetails" \ "credentialId").as[String] mustBe "CRED01"
+      (json \ "agentDetails" \ "irAgentId").as[String] mustBe "123456"
+      (json \ "contractorDetails" \ "hmrcOfficeNumber").as[String] mustBe "754"
+      (json \ "contractorDetails" \ "schemeReferenceNumber").as[String] mustBe "EZ00100"
+    }
+
+    "deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01",
+          "irAgentId" -> "123456"
+        ),
+        "contractorDetails" -> Json.obj(
+          "hmrcOfficeNumber" -> "754",
+          "schemeReferenceNumber" -> "EZ00100"
+        )
+      )
+
+      val result = json.validate[HasCisClientRequest]
+
+      result mustBe a[JsSuccess[_]]
+      val request = result.get
+
+      request.agentDetails.credentialId mustBe "CRED01"
+      request.agentDetails.irAgentId mustBe "123456"
+      request.contractorDetails.hmrcOfficeNumber mustBe "754"
+      request.contractorDetails.schemeReferenceNumber mustBe "EZ00100"
+    }
+
+    "fail to deserialize when contractorDetails is missing" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01",
+          "irAgentId" -> "123456"
+        )
+      )
+
+      val result = json.validate[HasCisClientRequest]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when a nested field is missing" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01"
+        ),
+        "contractorDetails" -> Json.obj(
+          "hmrcOfficeNumber" -> "754",
+          "schemeReferenceNumber" -> "EZ00100"
+        )
+      )
+
+      val result = json.validate[HasCisClientRequest]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when a flat body is used" in {
+      val json = Json.obj(
+        "credentialId" -> "CRED01",
+        "irAgentId" -> "123456",
+        "hmrcOfficeNumber" -> "754",
+        "schemeReferenceNumber" -> "EZ00100"
+      )
+
+      val result = json.validate[HasCisClientRequest]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when proxy field names are used" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01",
+          "irAgentId" -> "123456"
+        ),
+        "contractorDetails" -> Json.obj(
+          "taxOfficeNumber" -> "754",
+          "taxOfficeReference" -> "EZ00100"
+        )
+      )
+
+      val result = json.validate[HasCisClientRequest]
+
+      result.isError mustBe true
+    }
+  }
+
+  "HasClientResponse" should {
+
+    "serialize to JSON correctly when hasClient is true" in {
+      val response = HasClientResponse(
+        hasClient = true
+      )
+
+      val json = Json.toJson(response)
+
+      (json \ "hasClient").as[Boolean] mustBe true
+    }
+
+    "serialize to JSON correctly when hasClient is false" in {
+      val response = HasClientResponse(
+        hasClient = false
+      )
+
+      val json = Json.toJson(response)
+
+      (json \ "hasClient").as[Boolean] mustBe false
+    }
+
+    "deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "hasClient" -> true
+      )
+
+      val result = json.validate[HasClientResponse]
+
+      result mustBe a[JsSuccess[_]]
+      result.get.hasClient mustBe true
+    }
+
+    "fail to deserialize when type is incorrect" in {
+      val json = Json.obj(
+        "hasClient" -> "yes"
+      )
+
+      val result = json.validate[HasClientResponse]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when a mandatory field is missing" in {
+      val json = Json.obj(
+      )
+
+      val result = json.validate[HasClientResponse]
+
+      result.isError mustBe true
+    }
+  }
 }
