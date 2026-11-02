@@ -43,7 +43,9 @@ trait ApplicationWithWiremock
       "microservice.services.rds-datacache-proxy.port" -> WireMockConstants.stubPort,
       "microservice.services.cis-paye-penalties-and-appeals-stub.port" -> WireMockConstants.stubPort,
       "microservice.services.cis-paye-penalties-and-appeals-stub.host" -> WireMockConstants.stubHost,
-      "features.stub-rds-datacache-enabled" -> stubEnabled
+      "features.stub-rds-datacache-enabled" -> stubEnabled,
+      "microservice.services.client-exchange-proxy.host" -> WireMockConstants.stubHost,
+      "microservice.services.client-exchange-proxy.port" -> WireMockConstants.stubPort
     )
   }
 
