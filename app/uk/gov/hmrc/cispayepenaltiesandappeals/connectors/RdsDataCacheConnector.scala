@@ -203,7 +203,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
 
   // CIS and PAYE shared
   def getClientListDownloadStatus(credentialId: String, serviceName: String, gracePeriodSeconds: Int)(implicit hc: HeaderCarrier): Future[ClientListStatusResponse] =
-    val url: URL = url"$rdsDatacacheCisPath/client-list-status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
+    val url: URL = url"$rdsDatacachePasPath/agent/clientlist/status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
     http.get(url)
       .execute[ClientListStatusResponse]
       .recover {

@@ -1145,7 +1145,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
   "getClientListDownloadStatus" should {
 
     def url(credentialId: String, serviceName: String, gracePeriodSeconds: Int) =
-      s"/rds-datacache-proxy/cis/client-list-status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
+      s"/rds-datacache-proxy/pas/agent/clientlist/status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
 
     val clientListStatusResponse = Json.obj(
       "status" -> "Succeeded"

@@ -32,7 +32,7 @@ class ClientListControllerISpec extends BaseSpec
   lazy val getClientListDownloadStatusUrl = s"$servicePrefix/agent/clientlist/status"
 
   def stubClientListStatusResponse(credentialId: String, serviceName: String, gracePeriodSeconds: Int): Unit = {
-    stubGet(s"/rds-datacache-proxy/cis/client-list-status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds", Status.OK,
+    stubGet(s"/rds-datacache-proxy/pas/agent/clientlist/status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds", Status.OK,
       Json.toJson(ClientListStatusResponse("Succeeded")).toString)
   }
 
