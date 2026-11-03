@@ -133,23 +133,4 @@ class ManageCisController @Inject()(
             }
       )
   }
-
-  def hasCisClient(): Action[JsValue] = auth.async(parse.json) { implicit request =>
-    request.body
-      .validate[HasCisClientRequest]
-      .fold(
-        errs =>
-          Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
-        body =>
-          service
-            .hasCisClient(body)
-            .map { result =>
-              Ok(Json.toJson(result))
-            }
-            .recover { case t =>
-              logger.error("[ManageCisController][hasCisClient] failed", t)
-              InternalServerError(Json.obj("message" -> "Unexpected error"))
-            }
-      )
-  }
 }

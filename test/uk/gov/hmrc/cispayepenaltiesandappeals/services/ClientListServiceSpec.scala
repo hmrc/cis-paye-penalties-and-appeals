@@ -140,5 +140,255 @@ final class ClientListServiceSpec extends SpecBase {
         verifyNoMoreInteractions(connector)
       }
     }
+
+    "hasCisClient" - {
+
+      val irAgentId = "123456"
+      val credentialId = "CRED01"
+      val hmrcOfficeNumber = "754"
+      val schemeReferenceNumber = "EZ00100"
+      val serviceName = "CIS"
+
+      def hasCisClientRequest(schemeReferenceNumber: String = "EZ00100") =
+        HasCisClientRequest(
+          agentDetails = AgentDetails(credentialId = credentialId, irAgentId = irAgentId),
+          contractorDetails = ContractorDetails(hmrcOfficeNumber = hmrcOfficeNumber, schemeReferenceNumber = schemeReferenceNumber)
+        )
+
+      val hasClientResponse = HasClientResponse(
+        hasClient = true
+      )
+
+      "must delegate to connector (happy path)" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        val result: HasClientResponse = service.hasCisClient(hasCisClientRequest()).futureValue
+        result mustBe hasClientResponse
+
+        verify(connector).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must return hasClient false when connector returns false" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        val notClientResponse = HasClientResponse(hasClient = false)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(notClientResponse))
+
+        val result: HasClientResponse = service.hasCisClient(hasCisClientRequest()).futureValue
+        result mustBe notClientResponse
+
+        verify(connector).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate failures from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        val boom = UpstreamErrorResponse("Service unavailable", 503)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.hasCisClient(hasCisClientRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must call connector exactly once per request" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        service.hasCisClient(hasCisClientRequest()).futureValue
+
+        verify(connector, times(1)).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must handle consecutive requests independently" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        val request1 = hasCisClientRequest()
+        val request2 = hasCisClientRequest("EZ00125")
+        val request3 = hasCisClientRequest("EZ00150")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo("EZ00125"), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo("EZ00150"), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        service.hasCisClient(request1).futureValue mustBe hasClientResponse
+        service.hasCisClient(request2).futureValue mustBe hasClientResponse
+        service.hasCisClient(request3).futureValue mustBe hasClientResponse
+
+        verify(connector, times(3)).hasClient(any(), any(), any(), any(), any())(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate RuntimeException from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        val boom = new RuntimeException("Connection failed")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.hasCisClient(hasCisClientRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+    }
+
+    "hasPayeClient" - {
+
+      val irAgentId = "123456"
+      val credentialId = "CRED01"
+      val hmrcOfficeNumber = "840"
+      val schemeReferenceNumber = "MZ00064"
+      val serviceName = "PAYE"
+
+      def hasPayeClientRequest(schemeReferenceNumber: String = "MZ00064") =
+        HasPayeClientRequest(
+          agentDetails = AgentDetails(credentialId = credentialId, irAgentId = irAgentId),
+          employerDetails = EmployerDetails(hmrcOfficeNumber = hmrcOfficeNumber, schemeReferenceNumber = schemeReferenceNumber)
+        )
+
+      val hasClientResponse = HasClientResponse(
+        hasClient = true
+      )
+
+      "must delegate to connector (happy path)" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        val result: HasClientResponse = service.hasPayeClient(hasPayeClientRequest()).futureValue
+        result mustBe hasClientResponse
+
+        verify(connector).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must return hasClient false when connector returns false" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        val notClientResponse = HasClientResponse(hasClient = false)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(notClientResponse))
+
+        val result: HasClientResponse = service.hasPayeClient(hasPayeClientRequest()).futureValue
+        result mustBe notClientResponse
+
+        verify(connector).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate failures from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        val boom = UpstreamErrorResponse("Service unavailable", 503)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.hasPayeClient(hasPayeClientRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must call connector exactly once per request" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        service.hasPayeClient(hasPayeClientRequest()).futureValue
+
+        verify(connector, times(1)).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must handle consecutive requests independently" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        val request1 = hasPayeClientRequest()
+        val request2 = hasPayeClientRequest("MZ00065")
+        val request3 = hasPayeClientRequest("MZ00066")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo("MZ00065"), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo("MZ00066"), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(hasClientResponse))
+
+        service.hasPayeClient(request1).futureValue mustBe hasClientResponse
+        service.hasPayeClient(request2).futureValue mustBe hasClientResponse
+        service.hasPayeClient(request3).futureValue mustBe hasClientResponse
+
+        verify(connector, times(3)).hasClient(any(), any(), any(), any(), any())(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+
+      "must propagate RuntimeException from connector" in {
+        val connector = mock[RdsDataCacheConnector]
+        val mockAppConfig = mock[AppConfig]
+        val service = new ClientListService(connector, mockAppConfig)
+        val boom = new RuntimeException("Connection failed")
+        implicit val hc: HeaderCarrier = HeaderCarrier()
+
+        when(connector.hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier]))
+          .thenReturn(Future.failed(boom))
+
+        val ex: Throwable = service.hasPayeClient(hasPayeClientRequest()).failed.futureValue
+        ex mustBe boom
+
+        verify(connector).hasClient(eqTo(irAgentId), eqTo(credentialId), eqTo(hmrcOfficeNumber), eqTo(schemeReferenceNumber), eqTo(serviceName))(any[HeaderCarrier])
+        verifyNoMoreInteractions(connector)
+      }
+    }
   }
 }
