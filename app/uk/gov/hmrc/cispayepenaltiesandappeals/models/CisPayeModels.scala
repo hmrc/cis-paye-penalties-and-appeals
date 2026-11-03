@@ -177,3 +177,14 @@ object HasClientResponse {
   implicit val format: OFormat[HasClientResponse] = Json.format[HasClientResponse]
 }
 
+case class ClientListStatusRequest(credentialId: String, serviceId: String)
+
+object ClientListStatusRequest {
+  implicit val format: OFormat[ClientListStatusRequest] = Json.format[ClientListStatusRequest]
+}
+
+case class ClientListStatusResponse(status: String)
+
+object ClientListStatusResponse {
+  implicit val format: OFormat[ClientListStatusResponse] = Json.format[ClientListStatusResponse]
+}
