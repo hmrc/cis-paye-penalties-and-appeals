@@ -41,14 +41,14 @@ final class PayeServiceSpec extends SpecBase {
       total = 2,
       appealablePenalties = List(
         GetAppealablePenaltyResponse(
-          uniqueId = Some(10001),
+          penaltyId = Some(10001),
           issueDate = Some(LocalDate.of(2023, 1, 1)),
           taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
           penaltyType = Some("PAYE3"),
           penaltyAmount = Some(BigDecimal(999.23))
         ),
         GetAppealablePenaltyResponse(
-          uniqueId = Some(10002),
+          penaltyId = Some(10002),
           issueDate = Some(LocalDate.of(2023, 1, 1)),
           taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
           penaltyType = Some("PAYE03"),
@@ -144,11 +144,11 @@ final class PayeServiceSpec extends SpecBase {
 
   "getPayePenaltyAllowed" - {
 
-    def getPenaltyAllowedRequest(employerReference: String = "hdz") =
+    def getPenaltyAllowedRequest(schemeReferenceNumber: String = "hdz") =
       GetPenaltyAllowedRequest(
-        districtNumber = 1L,
-        employerReference = employerReference,
-        uniqueId = 1L
+        hmrcOfficeNumber = 1L,
+        schemeReferenceNumber = schemeReferenceNumber,
+        penaltyId = 1L
       )
 
     val getPenaltyAllowedResponse = GetPenaltyAllowedResponse(
@@ -300,7 +300,7 @@ final class PayeServiceSpec extends SpecBase {
       )
 
     val getPayeAppealablePenaltyResponse = GetAppealablePenaltyResponse(
-      uniqueId = None,
+      penaltyId = None,
       issueDate = Some(LocalDate.of(2023, 1, 1)),
       taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
       penaltyType = Some("PAYE3"),
@@ -400,10 +400,10 @@ final class PayeServiceSpec extends SpecBase {
     )
 
     val testResponse = GetPayeTaxpayerResponse(
-      uniqueId = 1000123L,
+      penaltyId = 1000123L,
       instanceId = 2000123L,
-      districtNumber = "123",
-      employerRef = "AB456",
+      hmrcOfficeNumber = "123",
+      schemeReferenceNumber = "AB456",
       employerName1 = Some("ABC"),
       employerName2 = Some("Builders"),
       agentOwnRef = Some("REF1")

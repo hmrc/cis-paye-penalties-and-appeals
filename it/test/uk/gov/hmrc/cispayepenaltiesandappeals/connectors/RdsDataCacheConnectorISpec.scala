@@ -140,14 +140,14 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       "total" -> 2,
       "appealablePenalties" -> Json.arr(
         Json.obj(
-          "uniqueId" -> 10001,
+          "penaltyId" -> 10001,
           "issueDate" -> "2023-01-01",
           "taxPeriodEndDate" -> "2023-04-01",
           "penaltyType" -> "CIS003",
           "penaltyAmount" -> 999.23
         ),
         Json.obj(
-          "uniqueId" -> 10002,
+          "penaltyId" -> 10002,
           "issueDate" -> "2026-02-20",
           "taxPeriodEndDate" -> "2026-01-05",
           "penaltyType" -> "CIS005",
@@ -175,14 +175,14 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
         total = 2,
         appealablePenalties = List(
           GetAppealablePenaltyResponse(
-            uniqueId = Some(10001),
+            penaltyId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
             penaltyType = Some("CIS003"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
           GetAppealablePenaltyResponse(
-            uniqueId = Some(10002),
+            penaltyId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
             penaltyType = Some("CIS005"),
@@ -281,7 +281,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       val result = connector.getCisAppealablePenalty(payload).futureValue
 
       result mustBe GetAppealablePenaltyResponse(
-        uniqueId = None,
+        penaltyId = None,
         issueDate = Some(LocalDate.of(2023, 1, 1)),
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
         penaltyType = Some("CIS003"),
@@ -459,7 +459,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
               .withStatus(OK)
               .withBody(
                 s"""{
-                   |  "uniqueId": 1000123
+                   |  "penaltyId": 1000123
                    |}""".stripMargin
               )
           )
@@ -478,9 +478,9 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
     val url = "/rds-datacache-proxy/pas/cis/penalties/access-allowed"
 
     val payload = GetPenaltyAllowedRequest(
-      districtNumber = 1L,
-      employerReference = "hdz",
-      uniqueId = 1L
+      hmrcOfficeNumber = 1L,
+      schemeReferenceNumber = "hdz",
+      penaltyId = 1L
     )
 
     val appealablePenaltiesResponse = Json.obj(
@@ -549,7 +549,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
               .withStatus(OK)
               .withBody(
                 s"""{
-                   |  "uniqueId": "ANY_VALUE"
+                   |  "penaltyId": "ANY_VALUE"
                    |}""".stripMargin
               )
           )
@@ -620,7 +620,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       stubHasClient(
         OK,
         s"""{
-           |  "uniqueId": "ANY_VALUE"
+           |  "penaltyId": "ANY_VALUE"
            |}""".stripMargin
       )
 
@@ -648,14 +648,14 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       "total" -> 2,
       "appealablePenalties" -> Json.arr(
         Json.obj(
-          "uniqueId" -> 10001,
+          "penaltyId" -> 10001,
           "issueDate" -> "2023-01-01",
           "taxPeriodEndDate" -> "2023-04-01",
           "penaltyType" -> "PAYE3",
           "penaltyAmount" -> 999.23
         ),
         Json.obj(
-          "uniqueId" -> 10002,
+          "penaltyId" -> 10002,
           "issueDate" -> "2026-02-20",
           "taxPeriodEndDate" -> "2026-01-05",
           "penaltyType" -> "PAYE5",
@@ -683,14 +683,14 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
         total = 2,
         appealablePenalties = List(
           GetAppealablePenaltyResponse(
-            uniqueId = Some(10001),
+            penaltyId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
             penaltyType = Some("PAYE3"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
           GetAppealablePenaltyResponse(
-            uniqueId = Some(10002),
+            penaltyId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
             penaltyType = Some("PAYE5"),
@@ -873,7 +873,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       val result = connector.getPayeAppealablePenalty(payload).futureValue
 
       result mustBe GetAppealablePenaltyResponse(
-        uniqueId = None,
+        penaltyId = None,
         issueDate = Some(LocalDate.of(2023, 1, 1)),
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
         penaltyType = Some("PAYE3"),
@@ -957,10 +957,10 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
               .withStatus(OK)
               .withBody(
                 s"""{
-                   |  "uniqueId": 1000123,
+                   |  "penaltyId": 1000123,
                    |  "instanceId": 2000123,
-                   |  "districtNumber": "123",
-                   |  "employerRef": "AB456",
+                   |  "hmrcOfficeNumber": "123",
+                   |  "schemeReferenceNumber": "AB456",
                    |  "employerName1": "ABC"
                    |}""".stripMargin
               )
@@ -970,10 +970,10 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       val result = connector.getPayeTaxpayer(payload).futureValue
 
       result mustBe GetPayeTaxpayerResponse(
-        uniqueId = 1000123L,
+        penaltyId = 1000123L,
         instanceId = 2000123L,
-        districtNumber = "123",
-        employerRef = "AB456",
+        hmrcOfficeNumber = "123",
+        schemeReferenceNumber = "AB456",
         employerName1 = Some("ABC"),
         employerName2 = None,
         agentOwnRef = None
@@ -1037,7 +1037,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
               .withStatus(OK)
               .withBody(
                 s"""{
-                   |  "uniqueId": "1000123"
+                   |  "penaltyId": "1000123"
                    |}""".stripMargin
               )
           )
@@ -1055,9 +1055,9 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
     val url = "/rds-datacache-proxy/pas/paye/penalties/access-allowed"
 
     val payload = GetPenaltyAllowedRequest(
-      districtNumber = 1L,
-      employerReference = "hdz",
-      uniqueId = 1L
+      hmrcOfficeNumber = 1L,
+      schemeReferenceNumber = "hdz",
+      penaltyId = 1L
     )
 
     val appealablePenaltiesResponse = Json.obj(
@@ -1126,7 +1126,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
               .withStatus(OK)
               .withBody(
                 s"""{
-                   |  "uniqueId": "ANY_VALUE"
+                   |  "penaltyId": "ANY_VALUE"
                    |}""".stripMargin
               )
           )

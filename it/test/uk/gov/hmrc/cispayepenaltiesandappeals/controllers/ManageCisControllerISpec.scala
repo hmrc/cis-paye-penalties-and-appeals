@@ -51,14 +51,14 @@ class ManageCisControllerISpec extends BaseSpec
         total = 2,
         appealablePenalties = List(
           GetAppealablePenaltyResponse(
-            uniqueId = Some(10001),
+            penaltyId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
             penaltyType = Some("CIS003"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
           GetAppealablePenaltyResponse(
-            uniqueId = Some(10002),
+            penaltyId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
             penaltyType = Some("CIS005"),
@@ -71,7 +71,7 @@ class ManageCisControllerISpec extends BaseSpec
   def stubGetAppealablePenaltyResponse(): Unit = {
     stubPost("/rds-datacache-proxy/pas/cis/penalty", Status.OK,
       Json.toJson(GetAppealablePenaltyResponse(
-        uniqueId = None,
+        penaltyId = None,
         issueDate = Some(LocalDate.of(2023, 1, 1)),
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
         penaltyType = Some("CIS003"),
@@ -266,9 +266,9 @@ class ManageCisControllerISpec extends BaseSpec
         stubGetPenaltyAllowedResponse()
         val jsonBody = Json.toJson(
           GetPenaltyAllowedRequest(
-            districtNumber = 1L,
-            employerReference = "hdz",
-            uniqueId = 1L
+            hmrcOfficeNumber = 1L,
+            schemeReferenceNumber = "hdz",
+            penaltyId = 1L
           ))
 
         val result = wsClient.url(getCisPenaltiesAllowedUrl)
@@ -283,9 +283,9 @@ class ManageCisControllerISpec extends BaseSpec
         stubGetPenaltyAllowedResponse()
         val jsonBody = Json.toJson(
           GetPenaltyAllowedRequest(
-            districtNumber = 1L,
-            employerReference = "hdz",
-            uniqueId = 1L
+            hmrcOfficeNumber = 1L,
+            schemeReferenceNumber = "hdz",
+            penaltyId = 1L
           ))
 
         val result = wsClient.url(getCisPenaltiesAllowedUrl)
