@@ -88,14 +88,14 @@ class ManageCisControllerSpec extends SpecBase {
         total = 2,
         appealablePenalties = List(
           GetAppealablePenaltyResponse(
-            uniqueId = Some(10001),
+            penaltyId = Some(10001),
             issueDate = Some(LocalDate.of(2023, 1, 1)),
             taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
             penaltyType = Some("CIS003"),
             penaltyAmount = Some(BigDecimal(999.23))
           ),
           GetAppealablePenaltyResponse(
-            uniqueId = Some(10002),
+            penaltyId = Some(10002),
             issueDate = Some(LocalDate.of(2026, 2, 20)),
             taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
             penaltyType = Some("CIS005"),
@@ -149,7 +149,7 @@ class ManageCisControllerSpec extends SpecBase {
       )
 
       val testResponse = GetAppealablePenaltyResponse(
-        uniqueId = None,
+        penaltyId = None,
         issueDate = Some(LocalDate.of(2023, 1, 1)),
         taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
         penaltyType = Some("CIS003"),
