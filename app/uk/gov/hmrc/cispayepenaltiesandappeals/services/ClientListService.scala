@@ -31,4 +31,24 @@ class ClientListService @Inject()(rdsDataCacheConnector: RdsDataCacheConnector,
   def getClientListDownloadStatus(clientListStatusRequest: ClientListStatusRequest)
                      (implicit hc: HeaderCarrier): Future[ClientListStatusResponse] =
     rdsDataCacheConnector.getClientListDownloadStatus(clientListStatusRequest.credentialId, clientListStatusRequest.serviceId, appConfig.gracePeriod)
+
+  def hasCisClient(hasCisClientRequest: HasCisClientRequest)
+                  (implicit hc: HeaderCarrier): Future[HasClientResponse] =
+    rdsDataCacheConnector.hasClient(
+      hasCisClientRequest.agentDetails.irAgentId,
+      hasCisClientRequest.agentDetails.credentialId,
+      hasCisClientRequest.contractorDetails.hmrcOfficeNumber,
+      hasCisClientRequest.contractorDetails.schemeReferenceNumber,
+      "CIS"
+    )
+
+  def hasPayeClient(hasPayeClientRequest: HasPayeClientRequest)
+                   (implicit hc: HeaderCarrier): Future[HasClientResponse] =
+    rdsDataCacheConnector.hasClient(
+      hasPayeClientRequest.agentDetails.irAgentId,
+      hasPayeClientRequest.agentDetails.credentialId,
+      hasPayeClientRequest.employerDetails.hmrcOfficeNumber,
+      hasPayeClientRequest.employerDetails.schemeReferenceNumber,
+      "PAYE"
+    )
 }
