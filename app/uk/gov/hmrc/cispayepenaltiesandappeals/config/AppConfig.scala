@@ -25,3 +25,7 @@ class AppConfig @Inject()(config: Configuration):
   val appName: String = config.get[String]("appName")
   
   val gracePeriod: Int = config.get[Int]("client-list.gracePeriodSeconds")
+
+  val defaultBrowserIntervalMs: Long = config.get[Long]("client-list.defaultBrowserIntervalMs")
+
+  val defaultBusinessIntervalsMs: Seq[Long] = config.get[Seq[Long]]("client-list.defaultBusinessIntervalsMs")
