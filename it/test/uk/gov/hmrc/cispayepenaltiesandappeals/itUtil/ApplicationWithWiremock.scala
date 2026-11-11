@@ -94,6 +94,18 @@ trait ApplicationWithWiremock
 
   private val postAuthoriseUrl = "/auth/authorise"
 
+  private val irPayeAgentEnrolment: String =
+    """{"key":"IR-PAYE-AGENT","identifiers":[{"key":"IRAgentReference","value":"123456"}],"state":"Activated"}"""
+
+  private def agentAuthoriseBody(enrolments: String): String =
+    s"""{
+       |  "authorise": [{"confidenceLevel": 200}],
+       |  "retrieve": ["affinityGroup", "allEnrolments", "optionalCredentials"],
+       |  "affinityGroup": "Agent",
+       |  "allEnrolments": [$enrolments],
+       |  "optionalCredentials": {"providerId": "credId", "providerType": "GovernmentGateway"}
+       |}""".stripMargin
+
   private val authoriseBodyWithOrgEnrolmentsRetrieval: String =
     """{
       |  "authorise": [{"confidenceLevel": 200}],
@@ -127,6 +139,20 @@ trait ApplicationWithWiremock
 
   def stubUnauthorised(): Unit = {
     stubPost(postAuthoriseUrl, Status.UNAUTHORIZED, "{}")
+  }
+
+  def stubAuthorisedAgent(): Unit =
+    stubPost(postAuthoriseUrl, Status.OK, agentAuthoriseBody(irPayeAgentEnrolment))
+
+  def stubAuthorisedAgentWithoutEnrolment(): Unit =
+    stubPost(postAuthoriseUrl, Status.OK, agentAuthoriseBody(""))
+
+  def stubGetInScenario(url: String, scenario: String, fromState: String, toState: Option[String], status: Integer, body: String): StubMapping = {
+    val mapping = get(urlEqualTo(url))
+      .inScenario(scenario)
+      .whenScenarioStateIs(fromState)
+      .willReturn(aResponse().withStatus(status).withBody(body))
+    stubFor(toState.fold(mapping)(state => mapping.willSetStateTo(state)))
   }
 
 }
