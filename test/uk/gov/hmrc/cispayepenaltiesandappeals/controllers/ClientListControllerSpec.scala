@@ -75,7 +75,7 @@ class ClientListControllerSpec extends SpecBase {
       }
     }
 
-    "POST /cis/agent/clientlist/has-client (hasCisClient)" - {
+    "POST /cis/agent/clientlist/clients/status (hasCisClient)" - {
 
       val testRequest = HasCisClientRequest(
         agentDetails = AgentDetails(credentialId = "CRED01", irAgentId = "123456"),
@@ -141,7 +141,7 @@ class ClientListControllerSpec extends SpecBase {
       }
     }
 
-    "POST /paye/agent/clientlist/has-client (hasPayeClient)" - {
+    "POST /paye/agent/clientlist/clients/status (hasPayeClient)" - {
 
       val testRequest = HasPayeClientRequest(
         agentDetails = AgentDetails(credentialId = "CRED01", irAgentId = "123456"),

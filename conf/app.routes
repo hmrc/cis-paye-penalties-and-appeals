@@ -17,5 +17,5 @@ POST        /paye/penalties/access-allowed                              uk.gov.h
 # CIS and PAYE shared routes
 POST        /agent/clientlist/status                                    uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.getClientListDownloadStatus()
 POST        /agent/clientlist                                           uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListDownloadController.initiateClientListDownload()
-POST        /cis/agent/clientlist/has-client                            uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.hasCisClient()
-POST        /paye/agent/clientlist/has-client                           uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.hasPayeClient()
+POST        /cis/agent/clientlist/clients/status                            uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.hasCisClient()
+POST        /paye/agent/clientlist/clients/status                           uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.hasPayeClient()

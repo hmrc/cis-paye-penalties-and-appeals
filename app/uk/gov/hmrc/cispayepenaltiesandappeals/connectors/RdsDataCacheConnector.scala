@@ -201,7 +201,7 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def hasClient(irAgentId: String, credentialId: String, taxOfficeNumber: String, taxOfficeReference: String, serviceName: String)(implicit hc: HeaderCarrier): Future[HasClientResponse] =
-    val url: URL = url"$rdsDatacachePasPath/agent/clientlist/has-client?irAgentId=$irAgentId&credentialId=$credentialId&taxOfficeNumber=$taxOfficeNumber&taxOfficeReference=$taxOfficeReference&serviceName=$serviceName"
+    val url: URL = url"$rdsDatacachePasPath/agent/clientlist/clients/status?irAgentId=$irAgentId&credentialId=$credentialId&taxOfficeNumber=$taxOfficeNumber&taxOfficeReference=$taxOfficeReference&serviceName=$serviceName"
     http.get(url)
       .execute[HasClientResponse]
       .recover {

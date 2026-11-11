@@ -30,10 +30,10 @@ class ClientListControllerISpec extends BaseSpec
 
   val servicePrefix = s"http://localhost:$port/cis-paye-penalties-and-appeals"
   lazy val getClientListDownloadStatusUrl = s"$servicePrefix/agent/clientlist/status"
-  lazy val hasCisClientUrl = s"$servicePrefix/cis/agent/clientlist/has-client"
-  lazy val hasPayeClientUrl = s"$servicePrefix/paye/agent/clientlist/has-client"
-  val hasCisClientProxyUrl = "/rds-datacache-proxy/pas/agent/clientlist/has-client?irAgentId=123456&credentialId=CRED01&taxOfficeNumber=754&taxOfficeReference=EZ00100&serviceName=CIS"
-  val hasPayeClientProxyUrl = "/rds-datacache-proxy/pas/agent/clientlist/has-client?irAgentId=123456&credentialId=CRED01&taxOfficeNumber=840&taxOfficeReference=MZ00064&serviceName=PAYE"
+  lazy val hasCisClientUrl = s"$servicePrefix/cis/agent/clientlist/clients/status"
+  lazy val hasPayeClientUrl = s"$servicePrefix/paye/agent/clientlist/clients/status"
+  val hasCisClientProxyUrl = "/rds-datacache-proxy/pas/agent/clientlist/clients/status?irAgentId=123456&credentialId=CRED01&taxOfficeNumber=754&taxOfficeReference=EZ00100&serviceName=CIS"
+  val hasPayeClientProxyUrl = "/rds-datacache-proxy/pas/agent/clientlist/clients/status?irAgentId=123456&credentialId=CRED01&taxOfficeNumber=840&taxOfficeReference=MZ00064&serviceName=PAYE"
 
   def stubClientListStatusResponse(credentialId: String, serviceName: String, gracePeriodSeconds: Int): Unit = {
     stubGet(s"/rds-datacache-proxy/pas/agent/clientlist/status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds", Status.OK,

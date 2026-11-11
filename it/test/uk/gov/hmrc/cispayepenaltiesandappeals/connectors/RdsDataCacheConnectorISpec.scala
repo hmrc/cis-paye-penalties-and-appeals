@@ -1463,7 +1463,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
   }
   "hasClient" should {
 
-    val url = "/rds-datacache-proxy/pas/agent/clientlist/has-client"
+    val url = "/rds-datacache-proxy/pas/agent/clientlist/clients/status"
 
     val irAgentId = "123456"
     val credentialId = "CRED01"
