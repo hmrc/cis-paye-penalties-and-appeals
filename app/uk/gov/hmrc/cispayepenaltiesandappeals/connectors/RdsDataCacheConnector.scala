@@ -36,7 +36,6 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
   private val rdsDatacacheBasePath = config.baseUrl("rds-datacache-proxy") + "/rds-datacache-proxy"
   private val rdsDatacachePasPath = s"$rdsDatacacheBasePath/pas"
   private val rdsDatacacheCisTaxpayerPath = s"$rdsDatacacheBasePath/cis-taxpayer"
-  private val rdsDatacacheCisPath = s"$rdsDatacacheBasePath/cis"
 
   private val stubPath = config.baseUrl("cis-paye-penalties-and-appeals-stub") + "/cis-paye-penalties-and-appeals-stub"
   val stubRdsDatacache: Boolean = config.getBoolean("features.stub-rds-datacache-enabled")
@@ -113,23 +112,6 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           throw e
         case e: Throwable =>
           logger.error(s"[RdsDataCacheConnector][getCisPenaltyAllowed]: ${e.getMessage}")
-          throw new RuntimeException(e.getMessage)
-      }
-
-  def hasCisClient(request: HasCisClientRequest)(implicit hc: HeaderCarrier): Future[HasClientResponse] =
-    val irAgentId          = request.agentDetails.irAgentId
-    val credentialId       = request.agentDetails.credentialId
-    val taxOfficeNumber    = request.contractorDetails.hmrcOfficeNumber
-    val taxOfficeReference = request.contractorDetails.schemeReferenceNumber
-    val url: URL = url"$rdsDatacacheCisPath/has-client?irAgentId=$irAgentId&credentialId=$credentialId&taxOfficeNumber=$taxOfficeNumber&taxOfficeReference=$taxOfficeReference"
-    http.get(url)
-      .execute[HasClientResponse]
-      .recover {
-        case e: UpstreamErrorResponse =>
-          logger.error(s"[RdsDataCacheConnector][hasCisClient]: Upstream error - ${e.getMessage}")
-          throw e
-        case e: Throwable =>
-          logger.error(s"[RdsDataCacheConnector][hasCisClient]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
 
@@ -215,6 +197,19 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
           throw e
         case e: Throwable =>
           logger.error(s"[RdsDataCacheConnector][getClientListDownloadStatus]: ${e.getMessage}")
+          throw new RuntimeException(e.getMessage)
+      }
+
+  def hasClient(irAgentId: String, credentialId: String, taxOfficeNumber: String, taxOfficeReference: String, serviceName: String)(implicit hc: HeaderCarrier): Future[HasClientResponse] =
+    val url: URL = url"$rdsDatacachePasPath/agent/clientlist/clients/status?irAgentId=$irAgentId&credentialId=$credentialId&taxOfficeNumber=$taxOfficeNumber&taxOfficeReference=$taxOfficeReference&serviceName=$serviceName"
+    http.get(url)
+      .execute[HasClientResponse]
+      .recover {
+        case e: UpstreamErrorResponse =>
+          logger.error(s"[RdsDataCacheConnector][hasClient]: Upstream error - ${e.getMessage}")
+          throw e
+        case e: Throwable =>
+          logger.error(s"[RdsDataCacheConnector][hasClient]: ${e.getMessage}")
           throw new RuntimeException(e.getMessage)
       }
 }

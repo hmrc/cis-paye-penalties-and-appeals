@@ -802,6 +802,122 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
     }
   }
 
+  "HasPayeClientRequest" should {
+
+    "serialize to JSON correctly" in {
+      val request = HasPayeClientRequest(
+        agentDetails = AgentDetails(credentialId = "CRED01", irAgentId = "123456"),
+        employerDetails = EmployerDetails(hmrcOfficeNumber = "840", schemeReferenceNumber = "MZ00064")
+      )
+
+      val json = Json.toJson(request)
+
+      (json \ "agentDetails" \ "credentialId").as[String] mustBe "CRED01"
+      (json \ "agentDetails" \ "irAgentId").as[String] mustBe "123456"
+      (json \ "employerDetails" \ "hmrcOfficeNumber").as[String] mustBe "840"
+      (json \ "employerDetails" \ "schemeReferenceNumber").as[String] mustBe "MZ00064"
+    }
+
+    "deserialize from JSON correctly" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01",
+          "irAgentId" -> "123456"
+        ),
+        "employerDetails" -> Json.obj(
+          "hmrcOfficeNumber" -> "840",
+          "schemeReferenceNumber" -> "MZ00064"
+        )
+      )
+
+      val result = json.validate[HasPayeClientRequest]
+
+      result mustBe a[JsSuccess[_]]
+      val request = result.get
+
+      request.agentDetails.credentialId mustBe "CRED01"
+      request.agentDetails.irAgentId mustBe "123456"
+      request.employerDetails.hmrcOfficeNumber mustBe "840"
+      request.employerDetails.schemeReferenceNumber mustBe "MZ00064"
+    }
+
+    "fail to deserialize when employerDetails is missing" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01",
+          "irAgentId" -> "123456"
+        )
+      )
+
+      val result = json.validate[HasPayeClientRequest]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when contractorDetails is used instead of employerDetails" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01",
+          "irAgentId" -> "123456"
+        ),
+        "contractorDetails" -> Json.obj(
+          "hmrcOfficeNumber" -> "840",
+          "schemeReferenceNumber" -> "MZ00064"
+        )
+      )
+
+      val result = json.validate[HasPayeClientRequest]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when a nested field is missing" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01"
+        ),
+        "employerDetails" -> Json.obj(
+          "hmrcOfficeNumber" -> "840",
+          "schemeReferenceNumber" -> "MZ00064"
+        )
+      )
+
+      val result = json.validate[HasPayeClientRequest]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when a flat body is used" in {
+      val json = Json.obj(
+        "credentialId" -> "CRED01",
+        "irAgentId" -> "123456",
+        "hmrcOfficeNumber" -> "840",
+        "schemeReferenceNumber" -> "MZ00064"
+      )
+
+      val result = json.validate[HasPayeClientRequest]
+
+      result.isError mustBe true
+    }
+
+    "fail to deserialize when proxy field names are used" in {
+      val json = Json.obj(
+        "agentDetails" -> Json.obj(
+          "credentialId" -> "CRED01",
+          "irAgentId" -> "123456"
+        ),
+        "employerDetails" -> Json.obj(
+          "taxOfficeNumber" -> "840",
+          "taxOfficeReference" -> "MZ00064"
+        )
+      )
+
+      val result = json.validate[HasPayeClientRequest]
+
+      result.isError mustBe true
+    }
+  }
+
   "HasClientResponse" should {
 
     "serialize to JSON correctly when hasClient is true" in {

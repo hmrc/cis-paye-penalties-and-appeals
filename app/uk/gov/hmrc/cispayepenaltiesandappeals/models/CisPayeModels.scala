@@ -169,6 +169,24 @@ object HasCisClientRequest {
   implicit val format: OFormat[HasCisClientRequest] = Json.format[HasCisClientRequest]
 }
 
+case class EmployerDetails(
+                            hmrcOfficeNumber: String,
+                            schemeReferenceNumber: String
+                          )
+
+object EmployerDetails {
+  implicit val format: OFormat[EmployerDetails] = Json.format[EmployerDetails]
+}
+
+case class HasPayeClientRequest(
+                                 agentDetails: AgentDetails,
+                                 employerDetails: EmployerDetails
+                               )
+
+object HasPayeClientRequest {
+  implicit val format: OFormat[HasPayeClientRequest] = Json.format[HasPayeClientRequest]
+}
+
 case class HasClientResponse(
                               hasClient: Boolean
                             )
