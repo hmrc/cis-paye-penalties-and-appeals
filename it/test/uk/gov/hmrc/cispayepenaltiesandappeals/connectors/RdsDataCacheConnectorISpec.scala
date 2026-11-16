@@ -1548,4 +1548,37 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
     }
   }
 
+  "client list calls when the RDS stub is enabled" should {
+
+    "get the client list download status from the stub" in {
+      stubFor(
+        get(urlPathEqualTo("/cis-paye-penalties-and-appeals-stub/agent/clientlist/status"))
+          .withQueryParam("credentialId", equalTo("CRED01"))
+          .withQueryParam("serviceName", equalTo("CIS"))
+          .withQueryParam("gracePeriod", equalTo("14400"))
+          .willReturn(aResponse().withStatus(OK).withBody(Json.obj("status" -> "Succeeded").toString()))
+      )
+
+      val result = connectorWithStub.getClientListDownloadStatus("CRED01", "CIS", 14400).futureValue
+
+      result mustBe ClientListStatusResponse("Succeeded")
+    }
+
+    "check has client against the stub" in {
+      stubFor(
+        get(urlPathEqualTo("/cis-paye-penalties-and-appeals-stub/agent/clientlist/clients/status"))
+          .withQueryParam("irAgentId", equalTo("123456"))
+          .withQueryParam("credentialId", equalTo("CRED01"))
+          .withQueryParam("taxOfficeNumber", equalTo("123"))
+          .withQueryParam("taxOfficeReference", equalTo("AB456"))
+          .withQueryParam("serviceName", equalTo("CIS"))
+          .willReturn(aResponse().withStatus(OK).withBody(Json.obj("hasClient" -> true).toString()))
+      )
+
+      val result = connectorWithStub.hasClient("123456", "CRED01", "123", "AB456", "CIS").futureValue
+
+      result mustBe HasClientResponse(hasClient = true)
+    }
+  }
+
 }

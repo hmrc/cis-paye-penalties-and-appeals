@@ -188,7 +188,9 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
 
   // CIS and PAYE shared
   def getClientListDownloadStatus(credentialId: String, serviceName: String, gracePeriodSeconds: Int)(implicit hc: HeaderCarrier): Future[ClientListStatusResponse] =
-    val url: URL = url"$rdsDatacachePasPath/agent/clientlist/status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
+    val url: URL =
+      if (stubRdsDatacache) url"$stubPath/agent/clientlist/status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
+      else url"$rdsDatacachePasPath/agent/clientlist/status?credentialId=$credentialId&serviceName=$serviceName&gracePeriod=$gracePeriodSeconds"
     http.get(url)
       .execute[ClientListStatusResponse]
       .recover {
@@ -201,7 +203,9 @@ class RdsDataCacheConnector @Inject()(http: HttpClientV2,
       }
 
   def hasClient(irAgentId: String, credentialId: String, taxOfficeNumber: String, taxOfficeReference: String, serviceName: String)(implicit hc: HeaderCarrier): Future[HasClientResponse] =
-    val url: URL = url"$rdsDatacachePasPath/agent/clientlist/clients/status?irAgentId=$irAgentId&credentialId=$credentialId&taxOfficeNumber=$taxOfficeNumber&taxOfficeReference=$taxOfficeReference&serviceName=$serviceName"
+    val url: URL =
+      if (stubRdsDatacache) url"$stubPath/agent/clientlist/clients/status?irAgentId=$irAgentId&credentialId=$credentialId&taxOfficeNumber=$taxOfficeNumber&taxOfficeReference=$taxOfficeReference&serviceName=$serviceName"
+      else url"$rdsDatacachePasPath/agent/clientlist/clients/status?irAgentId=$irAgentId&credentialId=$credentialId&taxOfficeNumber=$taxOfficeNumber&taxOfficeReference=$taxOfficeReference&serviceName=$serviceName"
     http.get(url)
       .execute[HasClientResponse]
       .recover {
