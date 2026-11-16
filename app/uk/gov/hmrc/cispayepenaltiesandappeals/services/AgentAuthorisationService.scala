@@ -29,8 +29,22 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
+/** Raised when a wait plan has no business intervals, so there is nothing to poll with. Surfaces as a 500. */
 final case class NoBusinessIntervalsException(msg: String) extends RuntimeException(msg)
 
+/** F4: decides whether an agent may act for a CIS contractor.
+  *
+  * Flow (ported from the `construction-industry-scheme` service's client list logic):
+  *  1. Read the agent's client list download status from RDS.
+  *  2. `Succeeded` continues. `Failed` stops. `InProgress` polls. `InitiateDownload` initiates the download
+  *     through the Client Exchange Proxy, then polls.
+  *  3. Polling waits for each business interval then checks the status, and finally waits one browser interval.
+  *  4. Anything other than `Succeeded` after polling means not authorised.
+  *  5. If `Succeeded`, ask RDS whether the agent has this client.
+  *
+  * Waiting uses the scheduler, not `Thread.sleep`, so no thread is blocked. A request can still take several
+  * seconds (about 7s with the default intervals), so callers' timeouts must be longer.
+  */
 @Singleton
 class AgentAuthorisationService @Inject()(
                                            clientListService: ClientListService,
@@ -39,22 +53,30 @@ class AgentAuthorisationService @Inject()(
                                            actorSystem: ActorSystem
                                          )(implicit ec: ExecutionContext) extends Logging {
 
+  // The client list is per service. F6 (PAYE agent) will reuse `process` with "PAYE".
   private val CisServiceId = "CIS"
 
+  // Wait plan from the proxy, remembered per (service, credential) while a download is being polled.
+  // In memory only: it is cleared when polling finishes, so it is only used if a previous call failed part way.
   private val waitTimeCache: TrieMap[(String, String), AsynchronousProcessWaitTime] = TrieMap.empty
 
+  // Used when the proxy has not given us a plan (status already InProgress, nothing cached). Values are in application.conf.
   private def defaultWaitPlan: AsynchronousProcessWaitTime =
     AsynchronousProcessWaitTime(
       browserIntervalMs = appConfig.defaultBrowserIntervalMs,
       businessIntervalsMs = appConfig.defaultBusinessIntervalsMs.toList
     )
 
+  // Non-blocking delay. `protected` so unit tests can replace it with an instant version.
   protected def sleep(ms: Long): Future[Unit] = {
     val promise = Promise[Unit]()
     actorSystem.scheduler.scheduleOnce(ms.millis)(promise.success(()))
     promise.future
   }
 
+  /** Entry point for the guard. Never throws for a normal "not authorised" outcome; those are returned as
+    * [[AgentAuthorisationResult]]. Upstream failures (RDS, proxy) fail the future and become a 500.
+    */
   def authoriseCisAgent(irAgentId: String, credentialId: String, request: AgentAuthoriseRequest)
                        (implicit hc: HeaderCarrier): Future[AgentAuthorisationResult] =
     process(CisServiceId, credentialId, irAgentId).flatMap {
@@ -69,11 +91,13 @@ class AgentAuthorisationService @Inject()(
           .map { response =>
             if response.hasClient then Authorised else NotAuthorised(NoClientRelationship)
           }
+      // Failed, InProgress or InitiateDownload after polling: do not call has-client
       case other     =>
         logger.warn(s"[AgentAuthorisationService][authoriseCisAgent] - client list not available: ${other.asString}")
         Future.successful(NotAuthorised(other.asString))
     }
 
+  /** Brings the client list to a final status, initiating and polling as needed. Reusable for PAYE (F6). */
   def process(serviceId: String, credentialId: String, agentId: String)
              (implicit hc: HeaderCarrier): Future[ClientListStatus] = {
     val key = (serviceId, credentialId)
@@ -94,6 +118,7 @@ class AgentAuthorisationService @Inject()(
       }
   }
 
+  // Reads the RDS status. An unrecognised value is a failure (500) rather than a silent "not authorised".
   private def getStatus(serviceId: String, credentialId: String)
                        (implicit hc: HeaderCarrier): Future[ClientListStatus] =
     clientListService
@@ -105,6 +130,7 @@ class AgentAuthorisationService @Inject()(
         }
       }
 
+  // Asks the Client Exchange Proxy to start the download and converts its answer into a wait plan.
   private def initiate(serviceId: String, credentialId: String, agentId: String)
                       (implicit hc: HeaderCarrier): Future[AsynchronousProcessWaitTime] =
     clientListDownloadService
@@ -116,13 +142,16 @@ class AgentAuthorisationService @Inject()(
         )
       }
 
+  // Business phase then browser phase. Returns the last status seen; the caller decides what that means.
   private def poll(serviceId: String, credentialId: String, waitPlan: AsynchronousProcessWaitTime)
                   (implicit hc: HeaderCarrier): Future[ClientListStatus] = {
     val business = waitPlan.businessIntervalsMs
 
+    // One last wait and check once the business intervals are used up. Returns whatever the status is then.
     def browserPhase(): Future[ClientListStatus] =
       sleep(waitPlan.browserIntervalMs).flatMap(_ => getStatus(serviceId, credentialId))
 
+    // Wait, check, and move on while the status is InProgress. InitiateDownload is tolerated until the last interval.
     def businessPhase(index: Int): Future[ClientListStatus] =
       if index >= business.length then browserPhase()
       else

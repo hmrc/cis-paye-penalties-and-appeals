@@ -16,16 +16,25 @@
 
 package uk.gov.hmrc.cispayepenaltiesandappeals.models
 
+/** Client list download status held in RDS for an agent credential.
+  *
+  * `asString` must match the values RDS returns exactly (`ClientListStatusResponse.status`).
+  */
 sealed trait ClientListStatus {
   val asString: String
 }
 
 object ClientListStatus {
+  /** No usable download exists: it must be initiated (or re-initiated once the grace period has passed). */
   case object InitiateDownload extends ClientListStatus { val asString = "InitiateDownload" }
+  /** A download has been requested and is still being prepared. Poll again. */
   case object InProgress       extends ClientListStatus { val asString = "InProgress" }
+  /** The agent's client list is ready. */
   case object Succeeded        extends ClientListStatus { val asString = "Succeeded" }
+  /** The download failed. The agent cannot be authorised. */
   case object Failed           extends ClientListStatus { val asString = "Failed" }
 
+  /** Maps the RDS status text to a status, or `None` if the value is not recognised. */
   def fromString(value: String): Option[ClientListStatus] =
     value match {
       case InitiateDownload.asString => Some(InitiateDownload)

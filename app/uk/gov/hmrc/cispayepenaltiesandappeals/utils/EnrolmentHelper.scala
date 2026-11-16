@@ -18,11 +18,15 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.utils
 
 import uk.gov.hmrc.auth.core.Enrolments
 
+/** Enrolment lookups and format checks shared by the authorisation guards (F4 now; F5-F7 reuse it). */
 object EnrolmentHelper {
 
   val IrPayeAgentKey: String         = "IR-PAYE-AGENT"
   val IrAgentReferenceKey: String    = "IRAgentReference"
 
+  /** Returns the agent reference only when the user holds an *activated* `IR-PAYE-AGENT` enrolment whose
+    * `IRAgentReference` is a valid 6 character alphanumeric value. Anything else returns `None` (treated as not authorised).
+    */
   def irAgentReference(enrolments: Enrolments): Option[String] =
     enrolments
       .getEnrolment(IrPayeAgentKey)
@@ -31,9 +35,11 @@ object EnrolmentHelper {
       .map(_.value)
       .filter(isValidAgentReference)
 
+  /** A tax office number (HMRC office number) is exactly three digits. */
   def isValidTaxOfficeNumber(taxOfficeNumber: String): Boolean =
     taxOfficeNumber != null && taxOfficeNumber.matches("[0-9]{3}")
 
+  /** An IR agent reference is exactly six letters or digits. */
   def isValidAgentReference(agentReference: String): Boolean =
     agentReference != null && agentReference.matches("[A-Za-z0-9]{6}")
 }

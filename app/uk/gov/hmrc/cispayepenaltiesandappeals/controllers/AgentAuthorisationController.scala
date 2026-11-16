@@ -30,6 +30,15 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+/** `POST /cis/agent/authorise` (F4).
+  *
+  * Body: `{ "hmrcOfficeNumber": "123", "schemeReferenceNumber": "AB456" }`
+  *
+  * Responses: 200 `{"authorised": true}`; 200 `{"authorised": false, "reason": ...}`; 400 invalid payload;
+  * 403 not an agent or no activated IR-PAYE-AGENT (from [[AgentAction]]); 500 upstream or unexpected error.
+  *
+  * The agent's identity is taken from the auth token, not the body.
+  */
 @Singleton
 class AgentAuthorisationController @Inject()(
                                               cc: ControllerComponents,
@@ -44,6 +53,7 @@ class AgentAuthorisationController @Inject()(
         errs =>
           Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
         body =>
+          // Reject bad input before any downstream call is made
           if !EnrolmentHelper.isValidTaxOfficeNumber(body.hmrcOfficeNumber) || body.schemeReferenceNumber.isBlank then
             Future.successful(
               BadRequest(
@@ -56,6 +66,7 @@ class AgentAuthorisationController @Inject()(
           else
             service
               .authoriseCisAgent(request.irAgentId, request.credentialId, body)(using HeaderCarrierConverter.fromRequest(request))
+              // Not being authorised is a normal outcome, so it is a 200 with authorised = false
               .map {
                 case Authorised            => Ok(Json.toJson(AgentAuthoriseResponse(authorised = true)))
                 case NotAuthorised(reason) => Ok(Json.toJson(AgentAuthoriseResponse(authorised = false, reason = Some(reason))))

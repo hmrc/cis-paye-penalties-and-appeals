@@ -26,6 +26,7 @@ class AppConfig @Inject()(config: Configuration):
   
   val gracePeriod: Int = config.get[Int]("client-list.gracePeriodSeconds")
 
+  // Default waits (milliseconds) used when polling the client list and the proxy has not supplied a plan
   val defaultBrowserIntervalMs: Long = config.get[Long]("client-list.defaultBrowserIntervalMs")
 
   val defaultBusinessIntervalsMs: Seq[Long] = config.get[Seq[Long]]("client-list.defaultBusinessIntervalsMs")
