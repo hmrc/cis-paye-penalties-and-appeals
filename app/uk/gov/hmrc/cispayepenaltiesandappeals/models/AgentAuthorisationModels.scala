@@ -16,13 +16,30 @@
 
 package uk.gov.hmrc.cispayepenaltiesandappeals.models
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
+import uk.gov.hmrc.cispayepenaltiesandappeals.utils.EnrolmentHelper
 
 /** Request body for `POST /cis/agent/authorise`: the CIS contractor (client) the agent wants to act for. */
 case class AgentAuthoriseRequest(hmrcOfficeNumber: String, schemeReferenceNumber: String)
 
 object AgentAuthoriseRequest {
-  implicit val format: OFormat[AgentAuthoriseRequest] = Json.format[AgentAuthoriseRequest]
+
+  // Field rules live here so a bad request gets one 400 shape, whichever rule it breaks
+  private val officeNumberReads: Reads[String] =
+    Reads.StringReads.filter(JsonValidationError("hmrcOfficeNumber must be 3 digits"))(EnrolmentHelper.isValidTaxOfficeNumber)
+
+  private val schemeReferenceReads: Reads[String] =
+    Reads.StringReads.filter(JsonValidationError("schemeReferenceNumber must be provided"))(_.trim.nonEmpty)
+
+  implicit val reads: Reads[AgentAuthoriseRequest] = (
+    (__ \ "hmrcOfficeNumber").read(officeNumberReads) and
+      (__ \ "schemeReferenceNumber").read(schemeReferenceReads)
+  )(AgentAuthoriseRequest.apply)
+
+  private val writes: OWrites[AgentAuthoriseRequest] = Json.writes[AgentAuthoriseRequest]
+
+  implicit val format: OFormat[AgentAuthoriseRequest] = OFormat(reads, writes)
 }
 
 /** Response body: `authorised` plus, when false, a `reason` explaining why. */

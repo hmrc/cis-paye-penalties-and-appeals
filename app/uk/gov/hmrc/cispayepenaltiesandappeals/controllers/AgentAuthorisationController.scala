@@ -23,7 +23,6 @@ import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.AgentAction
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.AgentAuthorisationResult.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.{AgentAuthoriseRequest, AgentAuthoriseResponse}
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.AgentAuthorisationService
-import uk.gov.hmrc.cispayepenaltiesandappeals.utils.EnrolmentHelper
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -34,7 +33,8 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * Body: `{ "hmrcOfficeNumber": "123", "schemeReferenceNumber": "AB456" }`
   *
-  * Responses: 200 `{"authorised": true}`; 200 `{"authorised": false, "reason": ...}`; 400 invalid payload;
+  * Responses: 200 `{"authorised": true}`; 200 `{"authorised": false, "reason": ...}`; 400 invalid payload (JSON shape,
+  * 3 digit office number or blank scheme reference, all reported in `errors`);
   * 403 not an agent or no activated IR-PAYE-AGENT (from [[AgentAction]]); 500 upstream or unexpected error.
   *
   * The agent's identity is taken from the auth token, not the body.
@@ -53,28 +53,17 @@ class AgentAuthorisationController @Inject()(
         errs =>
           Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
         body =>
-          // Reject bad input before any downstream call is made
-          if !EnrolmentHelper.isValidTaxOfficeNumber(body.hmrcOfficeNumber) || body.schemeReferenceNumber.isBlank then
-            Future.successful(
-              BadRequest(
-                Json.obj(
-                  "message" -> "Invalid payload",
-                  "reason"  -> "hmrcOfficeNumber must be 3 digits and schemeReferenceNumber must be provided"
-                )
-              )
-            )
-          else
-            service
-              .authoriseCisAgent(request.irAgentId, request.credentialId, body)(using HeaderCarrierConverter.fromRequest(request))
-              // Not being authorised is a normal outcome, so it is a 200 with authorised = false
-              .map {
-                case Authorised            => Ok(Json.toJson(AgentAuthoriseResponse(authorised = true)))
-                case NotAuthorised(reason) => Ok(Json.toJson(AgentAuthoriseResponse(authorised = false, reason = Some(reason))))
-              }
-              .recover { case t =>
-                logger.error("[AgentAuthorisationController][authorise] failed", t)
-                InternalServerError(Json.obj("message" -> "Unexpected error"))
-              }
+          service
+            .authoriseCisAgent(request.irAgentId, request.credentialId, body)(using HeaderCarrierConverter.fromRequest(request))
+            // Not being authorised is a normal outcome, so it is a 200 with authorised = false
+            .map {
+              case Authorised            => Ok(Json.toJson(AgentAuthoriseResponse(authorised = true)))
+              case NotAuthorised(reason) => Ok(Json.toJson(AgentAuthoriseResponse(authorised = false, reason = Some(reason))))
+            }
+            .recover { case t =>
+              logger.error("[AgentAuthorisationController][authorise] failed", t)
+              InternalServerError(Json.obj("message" -> "Unexpected error"))
+            }
       )
   }
 }

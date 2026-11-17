@@ -69,12 +69,15 @@ class AgentAuthorisationControllerSpec extends SpecBase {
         controller.authorise()(fakeRequest.withBody(Json.toJson(AgentAuthoriseRequest("12", "AB456"))))
       status(result) mustBe BAD_REQUEST
       (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+      (contentAsJson(result) \ "errors" \ "obj.hmrcOfficeNumber").isDefined mustBe true
     }
 
     "must return 400 when the scheme reference is blank" in new Setup {
       val result: Future[Result] =
         controller.authorise()(fakeRequest.withBody(Json.toJson(AgentAuthoriseRequest("123", " "))))
       status(result) mustBe BAD_REQUEST
+      (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+      (contentAsJson(result) \ "errors" \ "obj.schemeReferenceNumber").isDefined mustBe true
     }
 
     "must return 500 when the service fails" in new Setup {
