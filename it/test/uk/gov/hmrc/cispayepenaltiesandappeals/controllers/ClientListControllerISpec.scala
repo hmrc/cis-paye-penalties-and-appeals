@@ -59,7 +59,7 @@ class ClientListControllerISpec extends BaseSpec
     "call get" when {
 
       "return a 200:Ok:: authorised request" in {
-        stubAuthorised()
+        stubAuthorisedAgent()
         stubClientListStatusResponse(credentialId, serviceName, gracePeriodSeconds)
         val jsonBody = Json.toJson(ClientListStatusRequest(credentialId, serviceName))
 
@@ -72,6 +72,18 @@ class ClientListControllerISpec extends BaseSpec
 
       "return a 403:Forbidden:: unauthorised request" in {
         stubUnauthorised()
+        stubClientListStatusResponse(credentialId, serviceName, gracePeriodSeconds)
+        val jsonBody = Json.toJson(ClientListStatusRequest(credentialId, serviceName))
+
+        val result = wsClient.url(getClientListDownloadStatusUrl)
+          .withHttpHeaders("Authorization" -> "Bearer123")
+          .post(jsonBody)
+
+        result.status shouldBe FORBIDDEN
+      }
+
+      "return a 403:Forbidden:: organisation user" in {
+        stubAuthorised()
         stubClientListStatusResponse(credentialId, serviceName, gracePeriodSeconds)
         val jsonBody = Json.toJson(ClientListStatusRequest(credentialId, serviceName))
 
@@ -91,7 +103,7 @@ class ClientListControllerISpec extends BaseSpec
       )
 
       "return a 200:OK:: authorised request" in {
-        stubAuthorised()
+        stubAuthorisedAgent()
         stubHasCisClientResponse()
         val jsonBody = Json.toJson(testRequest)
 
@@ -104,7 +116,7 @@ class ClientListControllerISpec extends BaseSpec
       }
 
       "return a 400:BadRequest:: authorised request with invalid payload" in {
-        stubAuthorised()
+        stubAuthorisedAgent()
         stubHasCisClientResponse()
         val jsonBody = Json.obj("invalid" -> "data")
 
@@ -128,7 +140,7 @@ class ClientListControllerISpec extends BaseSpec
       }
 
       "return a 500:InternalServerError:: authorised request when proxy fails" in {
-        stubAuthorised()
+        stubAuthorisedAgent()
         stubGet(hasCisClientProxyUrl, Status.INTERNAL_SERVER_ERROR, "boom")
         val jsonBody = Json.toJson(testRequest)
 
@@ -148,7 +160,7 @@ class ClientListControllerISpec extends BaseSpec
       )
 
       "return a 200:OK:: authorised request" in {
-        stubAuthorised()
+        stubAuthorisedAgent()
         stubHasPayeClientResponse()
         val jsonBody = Json.toJson(testRequest)
 
@@ -161,7 +173,7 @@ class ClientListControllerISpec extends BaseSpec
       }
 
       "return a 400:BadRequest:: authorised request with invalid payload" in {
-        stubAuthorised()
+        stubAuthorisedAgent()
         stubHasPayeClientResponse()
         val jsonBody = Json.obj("invalid" -> "data")
 
@@ -185,7 +197,7 @@ class ClientListControllerISpec extends BaseSpec
       }
 
       "return a 500:InternalServerError:: authorised request when proxy fails" in {
-        stubAuthorised()
+        stubAuthorisedAgent()
         stubGet(hasPayeClientProxyUrl, Status.INTERNAL_SERVER_ERROR, "boom")
         val jsonBody = Json.toJson(testRequest)
 

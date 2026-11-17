@@ -42,7 +42,7 @@ class ClientListDownloadControllerISpec extends BaseSpec
   "ClientListDownloadController" should {
 
     "return a 200:OK with the intervals:: authorised request" in {
-      stubAuthorised()
+      stubAuthorisedAgent()
       stubGet(proxyUrl, OK, proxyBody)
 
       val result = wsClient.url(initiateUrl)
@@ -55,7 +55,7 @@ class ClientListDownloadControllerISpec extends BaseSpec
     }
 
     "return a 400:BadRequest:: invalid payload" in {
-      stubAuthorised()
+      stubAuthorisedAgent()
 
       val result = wsClient.url(initiateUrl)
         .withHttpHeaders("Authorization" -> "Bearer123")
@@ -75,8 +75,19 @@ class ClientListDownloadControllerISpec extends BaseSpec
       result.status shouldBe FORBIDDEN
     }
 
-    "return a 500:InternalServerError:: client exchange proxy fails" in {
+    "return a 403:Forbidden:: organisation user" in {
       stubAuthorised()
+      stubGet(proxyUrl, OK, proxyBody)
+
+      val result = wsClient.url(initiateUrl)
+        .withHttpHeaders("Authorization" -> "Bearer123")
+        .post(jsonBody)
+
+      result.status shouldBe FORBIDDEN
+    }
+
+    "return a 500:InternalServerError:: client exchange proxy fails" in {
+      stubAuthorisedAgent()
       stubGet(proxyUrl, INTERNAL_SERVER_ERROR, "")
 
       val result = wsClient.url(initiateUrl)
