@@ -23,8 +23,9 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers.{contentAsJson, status}
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.SpecBase
+import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.FakeAgentAction
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
-import uk.gov.hmrc.cispayepenaltiesandappeals.services.ClientListService
+import uk.gov.hmrc.cispayepenaltiesandappeals.services.{AgentAuthorisationService, ClientListService}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
 import scala.concurrent.Future
@@ -206,10 +207,76 @@ class ClientListControllerSpec extends SpecBase {
         (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
       }
     }
+
+    "POST /cis/agent/authorise (authorise)" - {
+
+      val authoriseBody = AgentAuthoriseRequest("123", "AB456")
+
+      "must return 200 authorised true when the service authorises" in new BaseSetup {
+        when(mockAgentAuthorisationService.authoriseCisAgent(eqTo("123456"), eqTo("cred-1"), eqTo(authoriseBody))(any[HeaderCarrier]))
+          .thenReturn(Future.successful(AgentAuthorisationResult.Authorised))
+
+        val result: Future[Result] = controller.authorise()(fakeRequest.withBody(Json.toJson(authoriseBody)))
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.obj("authorised" -> true)
+      }
+
+      "must return 200 authorised false with the reason when not authorised" in new BaseSetup {
+        when(mockAgentAuthorisationService.authoriseCisAgent(any[String], any[String], any[AgentAuthoriseRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.successful(AgentAuthorisationResult.NotAuthorised("Failed")))
+
+        val result: Future[Result] = controller.authorise()(fakeRequest.withBody(Json.toJson(authoriseBody)))
+
+        status(result) mustBe OK
+        contentAsJson(result) mustBe Json.obj("authorised" -> false, "reason" -> "Failed")
+      }
+
+      "must return 400 for a malformed payload" in new BaseSetup {
+        val result: Future[Result] = controller.authorise()(fakeRequest.withBody(Json.obj("x" -> "y")))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+      }
+
+      "must return 400 when the office number is not three digits" in new BaseSetup {
+        val result: Future[Result] =
+          controller.authorise()(fakeRequest.withBody(Json.toJson(AgentAuthoriseRequest("12", "AB456"))))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+        (contentAsJson(result) \ "errors" \ "obj.hmrcOfficeNumber").isDefined mustBe true
+      }
+
+      "must return 400 when the scheme reference is blank" in new BaseSetup {
+        val result: Future[Result] =
+          controller.authorise()(fakeRequest.withBody(Json.toJson(AgentAuthoriseRequest("123", " "))))
+
+        status(result) mustBe BAD_REQUEST
+        (contentAsJson(result) \ "message").as[String] mustBe "Invalid payload"
+        (contentAsJson(result) \ "errors" \ "obj.schemeReferenceNumber").isDefined mustBe true
+      }
+
+      "must return 500 when the service fails" in new BaseSetup {
+        when(mockAgentAuthorisationService.authoriseCisAgent(any[String], any[String], any[AgentAuthoriseRequest])(any[HeaderCarrier]))
+          .thenReturn(Future.failed(new RuntimeException("boom")))
+
+        val result: Future[Result] = controller.authorise()(fakeRequest.withBody(Json.toJson(authoriseBody)))
+
+        status(result) mustBe INTERNAL_SERVER_ERROR
+        (contentAsJson(result) \ "message").as[String] mustBe "Unexpected error"
+      }
+    }
   }
 
   private trait BaseSetup {
     val mockClientListService: ClientListService = mock[ClientListService]
-    val controller = new ClientListController(cc, fakeIdentifierAction, mockClientListService)
+    val mockAgentAuthorisationService: AgentAuthorisationService = mock[AgentAuthorisationService]
+    val controller = new ClientListController(
+      cc,
+      new FakeAgentAction(bodyParsers),
+      mockClientListService,
+      mockAgentAuthorisationService
+    )
   }
 }

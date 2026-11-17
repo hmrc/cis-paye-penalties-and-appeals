@@ -23,6 +23,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers.{contentAsJson, status}
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.SpecBase
+import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.FakeAgentAction
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.ClientListDownloadService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -105,6 +106,6 @@ class ClientListDownloadControllerSpec extends SpecBase {
 
   private trait BaseSetup {
     val mockService: ClientListDownloadService = mock[ClientListDownloadService]
-    val controller = new ClientListDownloadController(cc, fakeIdentifierAction, mockService)
+    val controller = new ClientListDownloadController(cc, new FakeAgentAction(bodyParsers), mockService)
   }
 }
