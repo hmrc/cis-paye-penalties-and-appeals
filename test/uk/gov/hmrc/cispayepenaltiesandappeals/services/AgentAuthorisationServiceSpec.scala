@@ -21,8 +21,8 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.base.SpecBase
 import uk.gov.hmrc.cispayepenaltiesandappeals.config.AppConfig
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.AgentAuthorisationResult.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.AgentAuthorisationResult.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
@@ -32,9 +32,11 @@ class AgentAuthorisationServiceSpec extends SpecBase {
   private val credId = "cred-1"
   private val agentId = "123456"
   private val request = AgentAuthoriseRequest("123", "AB456")
-  private val statusReq = ClientListStatusRequest(credId, "CIS")
-  private val hasClientReq =
+  private def statusReq(service: String) = ClientListStatusRequest(credId, service.toUpperCase)
+  private val hasCisClientReq =
     HasCisClientRequest(AgentDetails(credId, agentId), ContractorDetails("123", "AB456"))
+  private val hasPayeClientReq =
+    HasPayeClientRequest(AgentDetails(credId, agentId), EmployerDetails("123", "AB456"))
 
   private trait Setup {
     val statusService: ClientListService = mock[ClientListService]
@@ -50,57 +52,61 @@ class AgentAuthorisationServiceSpec extends SpecBase {
         override protected def sleep(ms: Long): Future[Unit] = { sleeps += ms; Future.unit }
       }
 
-    def statuses(values: String*): Unit = {
-      val responses = values.map(v => Future.successful(ClientListStatusResponse(v)))
-      when(statusService.getClientListDownloadStatus(eqTo(statusReq))(any[HeaderCarrier]))
+    def statuses(service: String, first: String, rest: String*): Unit = {
+      val responses = (first +: rest).map(v => Future.successful(ClientListStatusResponse(v)))
+      when(statusService.getClientListDownloadStatus(eqTo(statusReq(service)))(any[HeaderCarrier]))
         .thenReturn(responses.head, responses.tail*)
     }
 
-    def hasClient(value: Boolean): Unit =
-      when(statusService.hasCisClient(eqTo(hasClientReq))(any[HeaderCarrier]))
+    def hasCisClient(value: Boolean): Unit =
+      when(statusService.hasCisClient(eqTo(hasCisClientReq))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(HasClientResponse(value)))
+
+    def hasPayeClient(value: Boolean): Unit =
+      when(statusService.hasPayeClient(eqTo(hasPayeClientReq))(any[HeaderCarrier]))
         .thenReturn(Future.successful(HasClientResponse(value)))
   }
 
   "AgentAuthorisationService.authoriseCisAgent" - {
 
     "must authorise when the status is Succeeded and the agent has the client" in new Setup {
-      statuses("Succeeded"); hasClient(true)
+      statuses("CIS", "Succeeded"); hasCisClient(true)
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe Authorised
       sleeps mustBe empty
     }
 
     "must not authorise when the status is Succeeded but the agent has no client" in new Setup {
-      statuses("Succeeded"); hasClient(false)
+      statuses("CIS", "Succeeded"); hasCisClient(false)
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe NotAuthorised(NoClientRelationship)
     }
 
     "must not authorise and skip has-client when the status is Failed" in new Setup {
-      statuses("Failed")
+      statuses("CIS", "Failed")
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe NotAuthorised("Failed")
       verify(statusService, never()).hasCisClient(any[HasCisClientRequest])(any[HeaderCarrier])
     }
 
     "must poll with the default wait plan when InProgress and then authorise on Succeeded" in new Setup {
-      statuses("InProgress", "InProgress", "Succeeded"); hasClient(true)
+      statuses("CIS", "InProgress", "InProgress", "Succeeded"); hasCisClient(true)
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe Authorised
       sleeps.toList mustBe List(1000L, 5000L)
     }
 
     "must run the browser phase and not authorise when still InProgress" in new Setup {
-      statuses("InProgress", "InProgress", "InProgress", "InProgress")
+      statuses("CIS", "InProgress", "InProgress", "InProgress", "InProgress")
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe NotAuthorised("InProgress")
       sleeps.toList mustBe List(1000L, 5000L, 1000L)
       verify(statusService, never()).hasCisClient(any[HasCisClientRequest])(any[HeaderCarrier])
     }
 
     "must stop polling on Failed during the business phase" in new Setup {
-      statuses("InProgress", "Failed")
+      statuses("CIS", "InProgress", "Failed")
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe NotAuthorised("Failed")
       sleeps.toList mustBe List(1000L)
     }
 
     "must initiate the download, use the proxy wait plan and authorise on Succeeded" in new Setup {
-      statuses("InitiateDownload", "Succeeded"); hasClient(true)
+      statuses("CIS", "InitiateDownload", "Succeeded"); hasCisClient(true)
       when(downloadService.initiateClientListDownload(eqTo(InitiateClientListDownloadRequest("CIS", credId, agentId)))(any[HeaderCarrier]))
         .thenReturn(Future.successful(InitiateClientListDownloadResponse(2000, Seq(3000, 4000))))
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe Authorised
@@ -108,7 +114,7 @@ class AgentAuthorisationServiceSpec extends SpecBase {
     }
 
     "must continue past InitiateDownload on a non-final business interval" in new Setup {
-      statuses("InitiateDownload", "InitiateDownload", "Succeeded"); hasClient(true)
+      statuses("CIS", "InitiateDownload", "InitiateDownload", "Succeeded"); hasCisClient(true)
       when(downloadService.initiateClientListDownload(any[InitiateClientListDownloadRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(InitiateClientListDownloadResponse(1000, Seq(10, 20))))
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe Authorised
@@ -116,45 +122,142 @@ class AgentAuthorisationServiceSpec extends SpecBase {
     }
 
     "must not authorise when InitiateDownload is returned on the final business interval" in new Setup {
-      statuses("InitiateDownload", "InitiateDownload")
+      statuses("CIS", "InitiateDownload", "InitiateDownload")
       when(downloadService.initiateClientListDownload(any[InitiateClientListDownloadRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(InitiateClientListDownloadResponse(1000, Seq(10))))
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe NotAuthorised("InitiateDownload")
     }
 
     "must not authorise when InitiateDownload is returned after the browser interval" in new Setup {
-      statuses("InProgress", "InProgress", "InProgress", "InitiateDownload")
+      statuses("CIS","InProgress", "InProgress", "InProgress", "InitiateDownload")
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe NotAuthorised("InitiateDownload")
     }
 
     "must not authorise when Failed is returned after the browser interval" in new Setup {
-      statuses("InProgress", "InProgress", "InProgress", "Failed")
+      statuses("CIS", "InProgress", "InProgress", "InProgress", "Failed")
       service.authoriseCisAgent(agentId, credId, request).futureValue mustBe NotAuthorised("Failed")
     }
 
     "must fail when the proxy returns no business intervals" in new Setup {
-      statuses("InitiateDownload")
+      statuses("CIS", "InitiateDownload")
       when(downloadService.initiateClientListDownload(any[InitiateClientListDownloadRequest])(any[HeaderCarrier]))
         .thenReturn(Future.successful(InitiateClientListDownloadResponse(1000, Seq.empty)))
       service.authoriseCisAgent(agentId, credId, request).failed.futureValue mustBe a[NoBusinessIntervalsException]
     }
 
     "must fail when the status is not recognised" in new Setup {
-      statuses("Banana")
+      statuses("CIS", "Banana")
       service.authoriseCisAgent(agentId, credId, request).failed.futureValue mustBe a[IllegalStateException]
     }
 
     "must propagate a failure from the status call" in new Setup {
       val boom = new RuntimeException("boom")
-      when(statusService.getClientListDownloadStatus(eqTo(statusReq))(any[HeaderCarrier])).thenReturn(Future.failed(boom))
+      when(statusService.getClientListDownloadStatus(eqTo(statusReq("CIS")))(any[HeaderCarrier])).thenReturn(Future.failed(boom))
       service.authoriseCisAgent(agentId, credId, request).failed.futureValue mustBe boom
     }
 
     "must propagate a failure from has-client" in new Setup {
-      statuses("Succeeded")
+      statuses("CIS", "Succeeded")
       val boom = new RuntimeException("rds down")
       when(statusService.hasCisClient(any[HasCisClientRequest])(any[HeaderCarrier])).thenReturn(Future.failed(boom))
       service.authoriseCisAgent(agentId, credId, request).failed.futureValue mustBe boom
+    }
+  }
+
+  "AgentAuthorisationService.authorisePayeAgent" - {
+
+    "must authorise when the status is Succeeded and the agent has the client" in new Setup {
+      statuses("PAYE", "Succeeded"); hasPayeClient(true)
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe Authorised
+      sleeps mustBe empty
+    }
+
+    "must not authorise when the status is Succeeded but the agent has no client" in new Setup {
+      statuses("PAYE", "Succeeded"); hasPayeClient(false)
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe NotAuthorised(NoClientRelationship)
+    }
+
+    "must not authorise and skip has-client when the status is Failed" in new Setup {
+      statuses("PAYE", "Failed")
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe NotAuthorised("Failed")
+      verify(statusService, never()).hasPayeClient(any[HasPayeClientRequest])(any[HeaderCarrier])
+    }
+
+    "must poll with the default wait plan when InProgress and then authorise on Succeeded" in new Setup {
+      statuses("PAYE", "InProgress", "InProgress", "Succeeded"); hasPayeClient(true)
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe Authorised
+      sleeps.toList mustBe List(1000L, 5000L)
+    }
+
+    "must run the browser phase and not authorise when still InProgress" in new Setup {
+      statuses("PAYE", "InProgress", "InProgress", "InProgress", "InProgress")
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe NotAuthorised("InProgress")
+      sleeps.toList mustBe List(1000L, 5000L, 1000L)
+      verify(statusService, never()).hasPayeClient(any[HasPayeClientRequest])(any[HeaderCarrier])
+    }
+
+    "must stop polling on Failed during the business phase" in new Setup {
+      statuses("PAYE", "InProgress", "Failed")
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe NotAuthorised("Failed")
+      sleeps.toList mustBe List(1000L)
+    }
+
+    "must initiate the download, use the proxy wait plan and authorise on Succeeded" in new Setup {
+      statuses("PAYE", "InitiateDownload", "Succeeded"); hasPayeClient(true)
+      when(downloadService.initiateClientListDownload(eqTo(InitiateClientListDownloadRequest("PAYE", credId, agentId)))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(InitiateClientListDownloadResponse(2000, Seq(3000, 4000))))
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe Authorised
+      sleeps.toList mustBe List(3000L)
+    }
+
+    "must continue past InitiateDownload on a non-final business interval" in new Setup {
+      statuses("PAYE", "InitiateDownload", "InitiateDownload", "Succeeded"); hasPayeClient(true)
+      when(downloadService.initiateClientListDownload(any[InitiateClientListDownloadRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(InitiateClientListDownloadResponse(1000, Seq(10, 20))))
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe Authorised
+      sleeps.toList mustBe List(10L, 20L)
+    }
+
+    "must not authorise when InitiateDownload is returned on the final business interval" in new Setup {
+      statuses("PAYE", "InitiateDownload", "InitiateDownload")
+      when(downloadService.initiateClientListDownload(any[InitiateClientListDownloadRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(InitiateClientListDownloadResponse(1000, Seq(10))))
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe NotAuthorised("InitiateDownload")
+    }
+
+    "must not authorise when InitiateDownload is returned after the browser interval" in new Setup {
+      statuses("PAYE", "InProgress", "InProgress", "InProgress", "InitiateDownload")
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe NotAuthorised("InitiateDownload")
+    }
+
+    "must not authorise when Failed is returned after the browser interval" in new Setup {
+      statuses("PAYE", "InProgress", "InProgress", "InProgress", "Failed")
+      service.authorisePayeAgent(agentId, credId, request).futureValue mustBe NotAuthorised("Failed")
+    }
+
+    "must fail when the proxy returns no business intervals" in new Setup {
+      statuses("PAYE", "InitiateDownload")
+      when(downloadService.initiateClientListDownload(any[InitiateClientListDownloadRequest])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(InitiateClientListDownloadResponse(1000, Seq.empty)))
+      service.authorisePayeAgent(agentId, credId, request).failed.futureValue mustBe a[NoBusinessIntervalsException]
+    }
+
+    "must fail when the status is not recognised" in new Setup {
+      statuses("PAYE", "Banana")
+      service.authorisePayeAgent(agentId, credId, request).failed.futureValue mustBe a[IllegalStateException]
+    }
+
+    "must propagate a failure from the status call" in new Setup {
+      val boom = new RuntimeException("boom")
+      when(statusService.getClientListDownloadStatus(eqTo(statusReq("PAYE")))(any[HeaderCarrier])).thenReturn(Future.failed(boom))
+      service.authorisePayeAgent(agentId, credId, request).failed.futureValue mustBe boom
+    }
+
+    "must propagate a failure from has-client" in new Setup {
+      statuses("PAYE", "Succeeded")
+      val boom = new RuntimeException("rds down")
+      when(statusService.hasPayeClient(any[HasPayeClientRequest])(any[HeaderCarrier])).thenReturn(Future.failed(boom))
+      service.authorisePayeAgent(agentId, credId, request).failed.futureValue mustBe boom
     }
   }
 

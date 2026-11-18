@@ -19,9 +19,9 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.services
 import org.apache.pekko.actor.ActorSystem
 import play.api.Logging
 import uk.gov.hmrc.cispayepenaltiesandappeals.config.AppConfig
+import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.AgentAuthorisationResult.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.ClientListStatus.*
-import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -54,7 +54,8 @@ class AgentAuthorisationService @Inject()(
                                          )(implicit ec: ExecutionContext) extends Logging {
 
   // The client list is per service. F6 (PAYE agent) will reuse `process` with "PAYE".
-  private val CisServiceId = "CIS"
+  private val CisServiceId  = "CIS"
+  private val PayeServiceId = "PAYE"
 
   // Wait plan from the proxy, remembered per (service, credential) while a download is being polled.
   // In memory only: it is cleared when polling finishes, so it is only used if a previous call failed part way.
@@ -94,6 +95,26 @@ class AgentAuthorisationService @Inject()(
       // Failed, InProgress or InitiateDownload after polling: do not call has-client
       case other     =>
         logger.warn(s"[AgentAuthorisationService][authoriseCisAgent] - client list not available: ${other.asString}")
+        Future.successful(NotAuthorised(other.asString))
+    }
+
+  def authorisePayeAgent(irAgentId: String, credentialId: String, request: AgentAuthoriseRequest)
+                       (implicit hc: HeaderCarrier): Future[AgentAuthorisationResult] =
+    process(PayeServiceId, credentialId, irAgentId).flatMap {
+      case Succeeded =>
+        clientListService
+          .hasPayeClient(
+            HasPayeClientRequest(
+              agentDetails = AgentDetails(credentialId = credentialId, irAgentId = irAgentId),
+              employerDetails = EmployerDetails(request.hmrcOfficeNumber, request.schemeReferenceNumber)
+            )
+          )
+          .map { response =>
+            if response.hasClient then Authorised else NotAuthorised(NoClientRelationship)
+          }
+      // Failed, InProgress or InitiateDownload after polling: do not call has-client
+      case other     =>
+        logger.warn(s"[AgentAuthorisationService][authorisePayeAgent] - client list not available: ${other.asString}")
         Future.successful(NotAuthorised(other.asString))
     }
 
