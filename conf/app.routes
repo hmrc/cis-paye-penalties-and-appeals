@@ -6,6 +6,7 @@ POST        /cis/penalties                                              uk.gov.h
 POST        /cis/penalty                                                uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisAppealablePenalty()
 POST        /cis/taxpayer                                               uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisTaxpayer()
 POST        /cis/penalties/access-allowed                               uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManageCisController.getCisPenaltyAllowed()
+POST        /cis/agent/authorise                                        uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.authoriseCisAgent()
 
 # PAYE routes
 POST        /paye/appeal                                                uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.createPayeAppeal()
@@ -13,6 +14,7 @@ POST        /paye/penalties                                             uk.gov.h
 POST        /paye/penalty                                               uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayeAppealablePenalty()
 POST        /paye/taxpayer                                              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayeTaxpayer()
 POST        /paye/penalties/access-allowed                              uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ManagePayeController.getPayePenaltyAllowed()
+POST        /paye/agent/authorise                                       uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.authorisePayeAgent()
 
 # CIS and PAYE shared routes
 POST        /agent/clientlist/status                                    uk.gov.hmrc.cispayepenaltiesandappeals.controllers.ClientListController.getClientListDownloadStatus()

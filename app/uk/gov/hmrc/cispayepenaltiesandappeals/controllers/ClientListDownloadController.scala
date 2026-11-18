@@ -19,7 +19,7 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 import play.api.Logging
 import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.IdentifierAction
+import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.AgentAction
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
 import uk.gov.hmrc.cispayepenaltiesandappeals.services.ClientListDownloadService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ClientListDownloadController @Inject()(
                                               cc: ControllerComponents,
-                                              auth: IdentifierAction,
+                                              auth: AgentAction,
                                               service: ClientListDownloadService
                                             )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 

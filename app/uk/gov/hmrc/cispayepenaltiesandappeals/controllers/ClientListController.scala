@@ -19,23 +19,84 @@ package uk.gov.hmrc.cispayepenaltiesandappeals.controllers
 import play.api.Logging
 import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.IdentifierAction
+import uk.gov.hmrc.cispayepenaltiesandappeals.controllers.actions.AgentAction
 import uk.gov.hmrc.cispayepenaltiesandappeals.models.*
-import uk.gov.hmrc.cispayepenaltiesandappeals.services.ClientListService
+import uk.gov.hmrc.cispayepenaltiesandappeals.services.{AgentAuthorisationService, ClientListService}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+/** Agent-only endpoints: client list status, has-client checks and the F4 agent authorisation guard.
+  *
+  * All of them use [[AgentAction]], so a caller who is not an agent with an activated IR-PAYE-AGENT enrolment gets 403.
+  */
 @Singleton
 class ClientListController @Inject()(
                                      cc: ControllerComponents,
-                                     auth: IdentifierAction,
-                                     service: ClientListService
+                                     auth: AgentAction,
+                                     service: ClientListService,
+                                     agentAuthorisationService: AgentAuthorisationService
                                    )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
+  /** `POST /cis/agent/authorise` (F4).
+    *
+    * Body: `{ "hmrcOfficeNumber": "123", "schemeReferenceNumber": "AB456" }`
+    *
+    * Responses: 200 `{"authorised": true}`; 200 `{"authorised": false, "reason": ...}`; 400 invalid payload (JSON shape,
+    * 3 digit office number or blank scheme reference, all reported in `errors`); 403 not an agent or no activated
+    * IR-PAYE-AGENT (from [[AgentAction]]); 500 upstream or unexpected error.
+    *
+    * The agent's identity is taken from the auth token, not the body.
+    */
+  def authoriseCisAgent: Action[JsValue] = auth.async(parse.json) { implicit request =>
+    request.body
+      .validate[AgentAuthoriseRequest]
+      .fold(
+        errs =>
+          Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
+        body =>
+          agentAuthorisationService
+            .authoriseCisAgent(request.irAgentId, request.credentialId, body)(using HeaderCarrierConverter.fromRequest(request))
+            // Not being authorised is a normal outcome, so it is a 200 with authorised = false
+            .map {
+              case AgentAuthorisationResult.Authorised            =>
+                Ok(Json.toJson(AgentAuthoriseResponse(authorised = true)))
+              case AgentAuthorisationResult.NotAuthorised(reason) =>
+                Ok(Json.toJson(AgentAuthoriseResponse(authorised = false, reason = Some(reason))))
+            }
+            .recover { case t =>
+              logger.error("[ClientListController][authoriseCisAgent] failed", t)
+              InternalServerError(Json.obj("message" -> "Unexpected error"))
+            }
+      )
+  }
 
-  def getClientListDownloadStatus(): Action[JsValue] = auth.async(parse.json) { implicit request =>
+  def authorisePayeAgent: Action[JsValue] = auth.async(parse.json) { implicit request =>
+    request.body
+      .validate[AgentAuthoriseRequest]
+      .fold(
+        errs =>
+          Future.successful(BadRequest(Json.obj("message" -> "Invalid payload", "errors" -> JsError.toJson(errs)))),
+        body =>
+          agentAuthorisationService
+            .authorisePayeAgent(request.irAgentId, request.credentialId, body)(using HeaderCarrierConverter.fromRequest(request))
+            // Not being authorised is a normal outcome, so it is a 200 with authorised = false
+            .map {
+              case AgentAuthorisationResult.Authorised =>
+                Ok(Json.toJson(AgentAuthoriseResponse(authorised = true)))
+              case AgentAuthorisationResult.NotAuthorised(reason) =>
+                Ok(Json.toJson(AgentAuthoriseResponse(authorised = false, reason = Some(reason))))
+            }
+            .recover { case t =>
+              logger.error("[ClientListController][authorisePayeAgent] failed", t)
+              InternalServerError(Json.obj("message" -> "Unexpected error"))
+            }
+      )
+  }
+
+  def getClientListDownloadStatus: Action[JsValue] = auth.async(parse.json) { implicit request =>
     request.body
       .validate[ClientListStatusRequest]
       .fold(
@@ -54,7 +115,7 @@ class ClientListController @Inject()(
       )
   }
 
-  def hasCisClient(): Action[JsValue] = auth.async(parse.json) { implicit request =>
+  def hasCisClient: Action[JsValue] = auth.async(parse.json) { implicit request =>
     request.body
       .validate[HasCisClientRequest]
       .fold(
@@ -73,7 +134,7 @@ class ClientListController @Inject()(
       )
   }
 
-  def hasPayeClient(): Action[JsValue] = auth.async(parse.json) { implicit request =>
+  def hasPayeClient: Action[JsValue] = auth.async(parse.json) { implicit request =>
     request.body
       .validate[HasPayeClientRequest]
       .fold(
