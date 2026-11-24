@@ -49,17 +49,17 @@ class ManagePayeControllerISpec extends BaseSpec
         appealablePenalties = List(
           GetAppealablePenaltyResponse(
             penaltyId = Some(10001),
-            issueDate = Some(LocalDate.of(2023, 1, 1)),
-            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("PAYE3"),
-            penaltyAmount = Some(BigDecimal(999.23))
+            issueDate = LocalDate.of(2023, 1, 1),
+            taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+            penaltyType = "PAYE3",
+            penaltyAmount = BigDecimal(999.23)
           ),
           GetAppealablePenaltyResponse(
             penaltyId = Some(10002),
-            issueDate = Some(LocalDate.of(2026, 2, 20)),
-            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("PAYE3"),
-            penaltyAmount = Some(BigDecimal(928.23))
+            issueDate = LocalDate.of(2026, 2, 20),
+            taxPeriodEndDate = LocalDate.of(2026, 1, 5),
+            penaltyType = "PAYE3",
+            penaltyAmount = BigDecimal(928.23)
           )
         )
       )).toString)
@@ -69,10 +69,10 @@ class ManagePayeControllerISpec extends BaseSpec
     stubPost("/rds-datacache-proxy/pas/paye/penalty", Status.OK,
       Json.toJson(GetAppealablePenaltyResponse(
         penaltyId = None,
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("PAYE3"),
-        penaltyAmount = Some(BigDecimal(999.23))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "PAYE3",
+        penaltyAmount = BigDecimal(999.23)
       )).toString)
   }
 

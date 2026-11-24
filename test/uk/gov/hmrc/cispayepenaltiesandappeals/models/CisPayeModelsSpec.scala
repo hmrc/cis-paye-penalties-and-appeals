@@ -155,18 +155,18 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
     "serialize to JSON correctly" in {
       val penalty1 = GetAppealablePenaltyResponse(
         penaltyId = Some(10001),
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("CIS003"),
-        penaltyAmount = Some(BigDecimal("999.23"))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "CIS003",
+        penaltyAmount = BigDecimal("999.23")
       )
 
       val penalty2 = GetAppealablePenaltyResponse(
         penaltyId = Some(10002),
-        issueDate = Some(LocalDate.of(2025, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2026, 4, 1)),
-        penaltyType = Some("CIS005"),
-        penaltyAmount = Some(BigDecimal("148.29"))
+        issueDate = LocalDate.of(2025, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2026, 4, 1),
+        penaltyType = "CIS005",
+        penaltyAmount = BigDecimal("148.29")
       )
 
       val response = GetAppealablePenaltiesResponse(
@@ -223,17 +223,17 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
       response.appealablePenalties mustBe List(
         GetAppealablePenaltyResponse(
           penaltyId = Some(1001),
-          issueDate = Some(LocalDate.of(2026, 1, 15)),
-          taxPeriodEndDate = Some(LocalDate.of(2025, 12, 5)),
-          penaltyType = Some("CIS003"),
-          penaltyAmount = Some(BigDecimal(100))
+          issueDate = LocalDate.of(2026, 1, 15),
+          taxPeriodEndDate = LocalDate.of(2025, 12, 5),
+          penaltyType = "CIS003",
+          penaltyAmount = BigDecimal(100)
         ),
         GetAppealablePenaltyResponse(
           penaltyId = Some(1002),
-          issueDate = Some(LocalDate.of(2026, 2, 20)),
-          taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-          penaltyType = Some("CIS005"),
-          penaltyAmount = Some(BigDecimal(200))
+          issueDate = LocalDate.of(2026, 2, 20),
+          taxPeriodEndDate = LocalDate.of(2026, 1, 5),
+          penaltyType = "CIS005",
+          penaltyAmount = BigDecimal(200)
         )
       )
     }
@@ -297,10 +297,10 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
     "serialize to JSON correctly" in {
       val response = GetAppealablePenaltyResponse(
         penaltyId = Some(10001),
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("CIS003"),
-        penaltyAmount = Some(BigDecimal(999.23))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "CIS003",
+        penaltyAmount = BigDecimal(999.23)
       )
 
       val json = Json.toJson(response)
@@ -325,10 +325,10 @@ class CisPayeModelsSpec extends AnyWordSpec with Matchers {
 
       result mustBe a[JsSuccess[_]]
       result.get.penaltyId mustBe Some(10001)
-      result.get.issueDate mustBe Some(LocalDate.of(2023, 1, 1))
-      result.get.taxPeriodEndDate mustBe Some(LocalDate.of(2023, 4, 1))
-      result.get.penaltyType mustBe Some("CIS003")
-      result.get.penaltyAmount mustBe Some(999.23)
+      result.get.issueDate mustBe LocalDate.of(2023, 1, 1)
+      result.get.taxPeriodEndDate mustBe LocalDate.of(2023, 4, 1)
+      result.get.penaltyType mustBe "CIS003"
+      result.get.penaltyAmount mustBe 999.23
     }
 
     "fail to deserialize when type is incorrect" in {

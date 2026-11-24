@@ -135,17 +135,17 @@ final class CisServiceSpec extends SpecBase {
         appealablePenalties = List(
           GetAppealablePenaltyResponse(
             penaltyId = Some(10001),
-            issueDate = Some(LocalDate.of(2023, 1, 1)),
-            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("CIS03"),
-            penaltyAmount = Some(BigDecimal(999.23))
+            issueDate = LocalDate.of(2023, 1, 1),
+            taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+            penaltyType = "CIS03",
+            penaltyAmount = BigDecimal(999.23)
           ),
           GetAppealablePenaltyResponse(
             penaltyId = Some(10002),
-            issueDate = Some(LocalDate.of(2023, 1, 1)),
-            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("CIS03"),
-            penaltyAmount = Some(BigDecimal(999.23))
+            issueDate = LocalDate.of(2023, 1, 1),
+            taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+            penaltyType = "CIS03",
+            penaltyAmount = BigDecimal(999.23)
           )
         )
       )
@@ -246,10 +246,10 @@ final class CisServiceSpec extends SpecBase {
 
       val getCisAppealablePenaltyResponse = GetAppealablePenaltyResponse(
         penaltyId = None,
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("CIS003"),
-        penaltyAmount = Some(BigDecimal("999.23"))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "CIS003",
+        penaltyAmount = BigDecimal("999.23")
       )
 
       "must delegate to connector (happy path)" in {
