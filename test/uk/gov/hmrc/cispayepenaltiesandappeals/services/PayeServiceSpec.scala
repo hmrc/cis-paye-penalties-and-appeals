@@ -40,15 +40,15 @@ final class PayeServiceSpec extends SpecBase {
     val testResponse = GetAppealablePenaltiesResponse(
       total = 2,
       appealablePenalties = List(
-        GetAppealablePenaltyResponse(
-          penaltyId = Some(10001),
+        GetAppealablePenaltyItem(
+          penaltyId = 10001,
           issueDate = LocalDate.of(2023, 1, 1),
           taxPeriodEndDate = LocalDate.of(2023, 4, 1),
           penaltyType = "PAYE3",
           penaltyAmount = BigDecimal(999.23)
         ),
-        GetAppealablePenaltyResponse(
-          penaltyId = Some(10002),
+        GetAppealablePenaltyItem(
+          penaltyId = 10002,
           issueDate = LocalDate.of(2023, 1, 1),
           taxPeriodEndDate = LocalDate.of(2023, 4, 1),
           penaltyType = "PAYE03",
@@ -300,7 +300,6 @@ final class PayeServiceSpec extends SpecBase {
       )
 
     val getPayeAppealablePenaltyResponse = GetAppealablePenaltyResponse(
-      penaltyId = None,
       issueDate = LocalDate.of(2023, 1, 1),
       taxPeriodEndDate = LocalDate.of(2023, 4, 1),
       penaltyType = "PAYE3",
