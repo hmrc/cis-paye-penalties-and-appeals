@@ -40,19 +40,19 @@ final class PayeServiceSpec extends SpecBase {
     val testResponse = GetAppealablePenaltiesResponse(
       total = 2,
       appealablePenalties = List(
-        GetAppealablePenaltyResponse(
-          penaltyId = Some(10001),
-          issueDate = Some(LocalDate.of(2023, 1, 1)),
-          taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-          penaltyType = Some("PAYE3"),
-          penaltyAmount = Some(BigDecimal(999.23))
+        GetAppealablePenaltyItem(
+          penaltyId = 10001,
+          issueDate = LocalDate.of(2023, 1, 1),
+          taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+          penaltyType = "PAYE3",
+          penaltyAmount = BigDecimal(999.23)
         ),
-        GetAppealablePenaltyResponse(
-          penaltyId = Some(10002),
-          issueDate = Some(LocalDate.of(2023, 1, 1)),
-          taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-          penaltyType = Some("PAYE03"),
-          penaltyAmount = Some(BigDecimal(999.23))
+        GetAppealablePenaltyItem(
+          penaltyId = 10002,
+          issueDate = LocalDate.of(2023, 1, 1),
+          taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+          penaltyType = "PAYE03",
+          penaltyAmount = BigDecimal(999.23)
         )
       )
     )
@@ -300,11 +300,10 @@ final class PayeServiceSpec extends SpecBase {
       )
 
     val getPayeAppealablePenaltyResponse = GetAppealablePenaltyResponse(
-      penaltyId = None,
-      issueDate = Some(LocalDate.of(2023, 1, 1)),
-      taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-      penaltyType = Some("PAYE3"),
-      penaltyAmount = Some(BigDecimal("999.23"))
+      issueDate = LocalDate.of(2023, 1, 1),
+      taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+      penaltyType = "PAYE3",
+      penaltyAmount = BigDecimal("999.23")
     )
 
     "must delegate to connector (happy path)" in {

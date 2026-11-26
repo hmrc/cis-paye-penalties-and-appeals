@@ -168,14 +168,14 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
           "penaltyId" -> 10001,
           "issueDate" -> "2023-01-01",
           "taxPeriodEndDate" -> "2023-04-01",
-          "penaltyType" -> "CIS003",
+          "penaltyType" -> "CIS3",
           "penaltyAmount" -> 999.23
         ),
         Json.obj(
           "penaltyId" -> 10002,
           "issueDate" -> "2026-02-20",
           "taxPeriodEndDate" -> "2026-01-05",
-          "penaltyType" -> "CIS005",
+          "penaltyType" -> "CIS5",
           "penaltyAmount" -> 928.23
         )
       )
@@ -199,19 +199,19 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       result mustBe GetAppealablePenaltiesResponse(
         total = 2,
         appealablePenalties = List(
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10001),
-            issueDate = Some(LocalDate.of(2023, 1, 1)),
-            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("CIS003"),
-            penaltyAmount = Some(BigDecimal(999.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10001,
+            issueDate = LocalDate.of(2023, 1, 1),
+            taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+            penaltyType = "CIS3",
+            penaltyAmount = BigDecimal(999.23)
           ),
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10002),
-            issueDate = Some(LocalDate.of(2026, 2, 20)),
-            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("CIS005"),
-            penaltyAmount = Some(BigDecimal(928.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10002,
+            issueDate = LocalDate.of(2026, 2, 20),
+            taxPeriodEndDate = LocalDate.of(2026, 1, 5),
+            penaltyType = "CIS5",
+            penaltyAmount = BigDecimal(928.23)
           )
         )
       )
@@ -236,19 +236,19 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       result mustBe GetAppealablePenaltiesResponse(
         total = 2,
         appealablePenalties = List(
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10001),
-            issueDate = Some(LocalDate.of(2023, 1, 1)),
-            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("CIS003"),
-            penaltyAmount = Some(BigDecimal(999.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10001,
+            issueDate = LocalDate.of(2023, 1, 1),
+            taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+            penaltyType = "CIS3",
+            penaltyAmount = BigDecimal(999.23)
           ),
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10002),
-            issueDate = Some(LocalDate.of(2026, 2, 20)),
-            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("CIS005"),
-            penaltyAmount = Some(BigDecimal(928.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10002,
+            issueDate = LocalDate.of(2026, 2, 20),
+            taxPeriodEndDate = LocalDate.of(2026, 1, 5),
+            penaltyType = "CIS5",
+            penaltyAmount = BigDecimal(928.23)
           )
         )
       )
@@ -333,7 +333,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
                 s"""{
                    |  "issueDate": "2023-01-01",
                    |  "taxPeriodEndDate": "2023-04-01",
-                   |  "penaltyType": "CIS003",
+                   |  "penaltyType": "CIS3",
                    |  "penaltyAmount": 999.23
                    |}""".stripMargin
               )
@@ -343,11 +343,10 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       val result = connector.getCisAppealablePenalty(payload).futureValue
 
       result mustBe GetAppealablePenaltyResponse(
-        penaltyId = None,
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("CIS003"),
-        penaltyAmount = Some(BigDecimal("999.23"))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "CIS3",
+        penaltyAmount = BigDecimal("999.23")
       )
     }
 
@@ -365,7 +364,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
                 s"""{
                    |  "issueDate": "2023-01-01",
                    |  "taxPeriodEndDate": "2023-04-01",
-                   |  "penaltyType": "CIS003",
+                   |  "penaltyType": "CIS3",
                    |  "penaltyAmount": 999.23
                    |}""".stripMargin
               )
@@ -375,11 +374,10 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       val result = connectorWithStub.getCisAppealablePenalty(payload).futureValue
 
       result mustBe GetAppealablePenaltyResponse(
-        penaltyId = None,
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("CIS003"),
-        penaltyAmount = Some(BigDecimal("999.23"))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "CIS3",
+        penaltyAmount = BigDecimal("999.23")
       )
     }
 
@@ -852,14 +850,14 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
           "penaltyId" -> 10001,
           "issueDate" -> "2023-01-01",
           "taxPeriodEndDate" -> "2023-04-01",
-          "penaltyType" -> "PAYE3",
+          "penaltyType" -> "F",
           "penaltyAmount" -> 999.23
         ),
         Json.obj(
           "penaltyId" -> 10002,
           "issueDate" -> "2026-02-20",
           "taxPeriodEndDate" -> "2026-01-05",
-          "penaltyType" -> "PAYE5",
+          "penaltyType" -> "F",
           "penaltyAmount" -> 928.23
         )
       )
@@ -883,19 +881,19 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       result mustBe GetAppealablePenaltiesResponse(
         total = 2,
         appealablePenalties = List(
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10001),
-            issueDate = Some(LocalDate.of(2023, 1, 1)),
-            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("PAYE3"),
-            penaltyAmount = Some(BigDecimal(999.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10001,
+            issueDate = LocalDate.of(2023, 1, 1),
+            taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+            penaltyType = "F",
+            penaltyAmount = BigDecimal(999.23)
           ),
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10002),
-            issueDate = Some(LocalDate.of(2026, 2, 20)),
-            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("PAYE5"),
-            penaltyAmount = Some(BigDecimal(928.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10002,
+            issueDate = LocalDate.of(2026, 2, 20),
+            taxPeriodEndDate = LocalDate.of(2026, 1, 5),
+            penaltyType = "F",
+            penaltyAmount = BigDecimal(928.23)
           )
         )
       )
@@ -920,19 +918,19 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       result mustBe GetAppealablePenaltiesResponse(
         total = 2,
         appealablePenalties = List(
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10001),
-            issueDate = Some(LocalDate.of(2023, 1, 1)),
-            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("PAYE3"),
-            penaltyAmount = Some(BigDecimal(999.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10001,
+            issueDate = LocalDate.of(2023, 1, 1),
+            taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+            penaltyType = "F",
+            penaltyAmount = BigDecimal(999.23)
           ),
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10002),
-            issueDate = Some(LocalDate.of(2026, 2, 20)),
-            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("PAYE5"),
-            penaltyAmount = Some(BigDecimal(928.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10002,
+            issueDate = LocalDate.of(2026, 2, 20),
+            taxPeriodEndDate = LocalDate.of(2026, 1, 5),
+            penaltyType = "F",
+            penaltyAmount = BigDecimal(928.23)
           )
         )
       )
@@ -1017,7 +1015,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
                 s"""{
                    |  "issueDate": "2023-01-01",
                    |  "taxPeriodEndDate": "2023-04-01",
-                   |  "penaltyType": "PAYE3",
+                   |  "penaltyType": "F",
                    |  "penaltyAmount": 999.23
                    |}""".stripMargin
               )
@@ -1027,11 +1025,10 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       val result = connector.getPayeAppealablePenalty(payload).futureValue
 
       result mustBe GetAppealablePenaltyResponse(
-        penaltyId = None,
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("PAYE3"),
-        penaltyAmount = Some(BigDecimal("999.23"))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "F",
+        penaltyAmount = BigDecimal("999.23")
       )
     }
 
@@ -1049,7 +1046,7 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
                 s"""{
                    |  "issueDate": "2023-01-01",
                    |  "taxPeriodEndDate": "2023-04-01",
-                   |  "penaltyType": "PAYE3",
+                   |  "penaltyType": "F",
                    |  "penaltyAmount": 999.23
                    |}""".stripMargin
               )
@@ -1059,11 +1056,10 @@ class RdsDataCacheConnectorISpec extends AnyWordSpec
       val result = connectorWithStub.getPayeAppealablePenalty(payload).futureValue
 
       result mustBe GetAppealablePenaltyResponse(
-        penaltyId = None,
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("PAYE3"),
-        penaltyAmount = Some(BigDecimal("999.23"))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "F",
+        penaltyAmount = BigDecimal("999.23")
       )
     }
 

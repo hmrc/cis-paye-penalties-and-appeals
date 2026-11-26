@@ -87,19 +87,19 @@ class ManageCisControllerSpec extends SpecBase {
       val testResponse: GetAppealablePenaltiesResponse = GetAppealablePenaltiesResponse(
         total = 2,
         appealablePenalties = List(
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10001),
-            issueDate = Some(LocalDate.of(2023, 1, 1)),
-            taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-            penaltyType = Some("CIS003"),
-            penaltyAmount = Some(BigDecimal(999.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10001,
+            issueDate = LocalDate.of(2023, 1, 1),
+            taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+            penaltyType = "CIS3",
+            penaltyAmount = BigDecimal(999.23)
           ),
-          GetAppealablePenaltyResponse(
-            penaltyId = Some(10002),
-            issueDate = Some(LocalDate.of(2026, 2, 20)),
-            taxPeriodEndDate = Some(LocalDate.of(2026, 1, 5)),
-            penaltyType = Some("CIS005"),
-            penaltyAmount = Some(BigDecimal(928.23))
+          GetAppealablePenaltyItem(
+            penaltyId = 10002,
+            issueDate = LocalDate.of(2026, 2, 20),
+            taxPeriodEndDate = LocalDate.of(2026, 1, 5),
+            penaltyType = "CIS5",
+            penaltyAmount = BigDecimal(928.23)
           )
         )
       )
@@ -149,11 +149,10 @@ class ManageCisControllerSpec extends SpecBase {
       )
 
       val testResponse = GetAppealablePenaltyResponse(
-        penaltyId = None,
-        issueDate = Some(LocalDate.of(2023, 1, 1)),
-        taxPeriodEndDate = Some(LocalDate.of(2023, 4, 1)),
-        penaltyType = Some("CIS003"),
-        penaltyAmount = Some(BigDecimal(999.23))
+        issueDate = LocalDate.of(2023, 1, 1),
+        taxPeriodEndDate = LocalDate.of(2023, 4, 1),
+        penaltyType = "CIS3",
+        penaltyAmount = BigDecimal(999.23)
       )
 
       "return OK with response when service returns successfully" in new BaseSetup {
